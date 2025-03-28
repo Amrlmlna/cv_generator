@@ -1,112 +1,88 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik"
-import * as Yup from "yup"
-import { FaPlus, FaTrash, FaSpinner } from "react-icons/fa"
-import axios from "axios"
-import { toast } from "react-toastify"
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import CVPreview from "./CVPreview";
 
-// CV form validation schema
-const validationSchema = Yup.object({
-  title: Yup.string().required("CV title is required"),
-  template: Yup.string().required("Template is required"),
-  personalInfo: Yup.object({
-    full_name: Yup.string().required("Full name is required"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    phone: Yup.string(),
-    address: Yup.string(),
-    linkedin: Yup.string(),
-    github: Yup.string(),
-    website: Yup.string(),
-    summary: Yup.string(),
-  }),
-  education: Yup.array().of(
-    Yup.object({
-      institution: Yup.string().required("Institution is required"),
-      degree: Yup.string().required("Degree is required"),
-      field_of_study: Yup.string(),
-      start_date: Yup.string(),
-      end_date: Yup.string(),
-      gpa: Yup.number().min(0).max(4),
-      description: Yup.string(),
-    }),
-  ),
-  experience: Yup.array().of(
-    Yup.object({
-      company: Yup.string().required("Company is required"),
-      position: Yup.string().required("Position is required"),
-      start_date: Yup.string(),
-      end_date: Yup.string(),
-      is_current: Yup.boolean(),
-      description: Yup.string(),
-    }),
-  ),
-  skills: Yup.array().of(
-    Yup.object({
-      name: Yup.string().required("Skill name is required"),
-      proficiency: Yup.string().oneOf(["beginner", "intermediate", "advanced", "expert"]),
-    }),
-  ),
-  projects: Yup.array().of(
-    Yup.object({
-      name: Yup.string().required("Project name is required"),
-      description: Yup.string(),
-      start_date: Yup.string(),
-      end_date: Yup.string(),
-      url: Yup.string(),
-    }),
-  ),
-  categories: Yup.array().min(1, "Select at least one category"),
-})
+const CVForm = () => {
+  const [selectedTemplate, setSelectedTemplate] = useState("classic");
+  const [title, setTitle] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-const CVForm = ({ onSubmitSuccess }) => {
-  const [categories, setCategories] = useState([])
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
-  const [aiSuggestions, setAiSuggestions] = useState(null)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [previewData, setPreviewData] = useState({
+    personalInfo: {},
+    education: [],
+    experience: [],
+    skills: [],
+    projects: [],
+  });
 
-  // Templates
-  const templates = [
-    { id: "formal", name: "Formal" },
-    { id: "modern", name: "Modern" },
-    { id: "minimalist", name: "Minimalist" },
-    { id: "creative", name: "Creative" },
-  ]
+  const [personalInfo, setPersonalInfo] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    linkedin: "",
+    github: "",
+    website: "",
+    summary: "",
+  });
 
-  // Fetch categories on component mount
-  useState(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get("/api/categories")
-        if (response.data.success) {
-          setCategories(response.data.categories)
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error)
-        toast.error("Failed to load categories")
-      }
+  const [education, setEducation] = useState([]);
+  const [experience, setExperience] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [projects, setProjects] = useState([]);
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is logged in
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
     }
 
-    fetchCategories()
-  }, [])
+    // Fetch user's personal info if available
+    const fetchPersonalInfo = async () => {
+      try {
+        const res = await axios.get("/api/users/me", {
+          headers: { "x-auth-token": localStorage.getItem("token") },
+        });
 
-  // Initial form values
-  const initialValues = {
-    title: "",
-    template: "formal",
-    personalInfo: {
-      full_name: "",
-      email: "",
-      phone: "",
-      address: "",
-      linkedin: "",
-      github: "",
-      website: "",
-      summary: "",
-    },
-    education: [
+        if (res.data.personalInfo) {
+          setPersonalInfo(res.data.personalInfo);
+        }
+      } catch (err) {
+        console.error("Error fetching personal info:", err);
+      }
+    };
+
+    fetchPersonalInfo();
+  }, [navigate]);
+
+  useEffect(() => {
+    setPreviewData({
+      personalInfo,
+      education,
+      experience,
+      skills,
+      projects,
+    });
+  }, [personalInfo, education, experience, skills, projects]);
+
+  const handlePersonalInfoChange = (e) => {
+    const { name, value } = e.target;
+    setPersonalInfo((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const addEducation = () => {
+    setEducation([
+      ...education,
       {
         institution: "",
         degree: "",
@@ -116,8 +92,24 @@ const CVForm = ({ onSubmitSuccess }) => {
         gpa: "",
         description: "",
       },
-    ],
-    experience: [
+    ]);
+  };
+
+  const updateEducation = (index, field, value) => {
+    const newEducation = [...education];
+    newEducation[index][field] = value;
+    setEducation(newEducation);
+  };
+
+  const removeEducation = (index) => {
+    const newEducation = [...education];
+    newEducation.splice(index, 1);
+    setEducation(newEducation);
+  };
+
+  const addExperience = () => {
+    setExperience([
+      ...experience,
       {
         company: "",
         position: "",
@@ -126,14 +118,40 @@ const CVForm = ({ onSubmitSuccess }) => {
         is_current: false,
         description: "",
       },
-    ],
-    skills: [
-      {
-        name: "",
-        proficiency: "intermediate",
-      },
-    ],
-    projects: [
+    ]);
+  };
+
+  const updateExperience = (index, field, value) => {
+    const newExperience = [...experience];
+    newExperience[index][field] = value;
+    setExperience(newExperience);
+  };
+
+  const removeExperience = (index) => {
+    const newExperience = [...experience];
+    newExperience.splice(index, 1);
+    setExperience(newExperience);
+  };
+
+  const addSkill = () => {
+    setSkills([...skills, { name: "", proficiency: "intermediate" }]);
+  };
+
+  const updateSkill = (index, field, value) => {
+    const newSkills = [...skills];
+    newSkills[index][field] = value;
+    setSkills(newSkills);
+  };
+
+  const removeSkill = (index) => {
+    const newSkills = [...skills];
+    newSkills.splice(index, 1);
+    setSkills(newSkills);
+  };
+
+  const addProject = () => {
+    setProjects([
+      ...projects,
       {
         name: "",
         description: "",
@@ -141,789 +159,879 @@ const CVForm = ({ onSubmitSuccess }) => {
         end_date: "",
         url: "",
       },
-    ],
-    categories: [],
-    isPublic: true,
-  }
+    ]);
+  };
 
-  // Generate AI suggestions
-  const generateAISuggestions = async (values) => {
-    setIsGeneratingAI(true)
+  const updateProject = (index, field, value) => {
+    const newProjects = [...projects];
+    newProjects[index][field] = value;
+    setProjects(newProjects);
+  };
+
+  const removeProject = (index) => {
+    const newProjects = [...projects];
+    newProjects.splice(index, 1);
+    setProjects(newProjects);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!title) {
+      setError("Please provide a title for your CV");
+      return;
+    }
 
     try {
-      const response = await axios.post("/api/ai/generate-suggestions", values)
+      setLoading(true);
+      setError(null);
 
-      if (response.data.success) {
-        setAiSuggestions(response.data.suggestions)
-        toast.success("AI suggestions generated successfully!")
-      }
-    } catch (error) {
-      console.error("Error generating AI suggestions:", error)
-      toast.error("Failed to generate AI suggestions. Please try again.")
-    } finally {
-      setIsGeneratingAI(false)
-    }
-  }
-
-  // Apply AI suggestions to form
-  const applyAISuggestions = (setFieldValue) => {
-    if (aiSuggestions) {
-      if (aiSuggestions.summary) {
-        setFieldValue("personalInfo.summary", aiSuggestions.summary)
-      }
-
-      toast.success("AI suggestions applied!")
-    }
-  }
-
-  // Handle form submission
-  const handleSubmit = async (values, { resetForm }) => {
-    setIsSubmitting(true)
-
-    try {
-      // Include AI suggestions if available
-      if (aiSuggestions) {
-        values.aiSuggestions = JSON.stringify(aiSuggestions)
-      }
-
-      const response = await axios.post("/api/cvs", values)
-
-      if (response.data.success) {
-        toast.success("CV created successfully!")
-        resetForm()
-        setAiSuggestions(null)
-        setCurrentStep(1)
-
-        // Call the success callback if provided
-        if (onSubmitSuccess) {
-          onSubmitSuccess(response.data.cv)
+      // First, create or update personal info
+      const personalInfoRes = await axios.post(
+        "/api/users/personal-info",
+        personalInfo,
+        {
+          headers: { "x-auth-token": localStorage.getItem("token") },
         }
+      );
+
+      const personalInfoId = personalInfoRes.data.id;
+
+      // Create CV
+      const cvData = {
+        title,
+        template: selectedTemplate,
+        is_public: isPublic,
+        personal_info_id: personalInfoId,
+      };
+
+      const cvRes = await axios.post("/api/cvs", cvData, {
+        headers: { "x-auth-token": localStorage.getItem("token") },
+      });
+
+      const cvId = cvRes.data.id;
+
+      // Add education
+      for (const edu of education) {
+        await axios.post(
+          "/api/cvs/education",
+          {
+            ...edu,
+            personal_info_id: personalInfoId,
+          },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
       }
-    } catch (error) {
-      console.error("Error creating CV:", error)
-      toast.error("Failed to create CV. Please try again.")
-    } finally {
-      setIsSubmitting(false)
+
+      // Add experience
+      for (const exp of experience) {
+        await axios.post(
+          "/api/cvs/experience",
+          {
+            ...exp,
+            personal_info_id: personalInfoId,
+          },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+      }
+
+      // Add skills
+      for (const skill of skills) {
+        await axios.post(
+          "/api/cvs/skills",
+          {
+            ...skill,
+            personal_info_id: personalInfoId,
+          },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+      }
+
+      // Add projects
+      for (const project of projects) {
+        await axios.post(
+          "/api/cvs/projects",
+          {
+            ...project,
+            personal_info_id: personalInfoId,
+          },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+      }
+
+      setSuccess(true);
+      setLoading(false);
+
+      // Redirect to view CV page
+      setTimeout(() => {
+        navigate(`/view-cv/${cvId}`);
+      }, 2000);
+    } catch (err) {
+      console.error("Error creating CV:", err);
+      setError("Failed to create CV. Please try again.");
+      setLoading(false);
     }
-  }
-
-  // Next step
-  const goToNextStep = () => {
-    setCurrentStep(currentStep + 1)
-    window.scrollTo(0, 0)
-  }
-
-  // Previous step
-  const goToPreviousStep = () => {
-    setCurrentStep(currentStep - 1)
-    window.scrollTo(0, 0)
-  }
+  };
 
   return (
-    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-      {({ values, errors, touched, setFieldValue, isValid }) => (
-        <Form className="space-y-8">
-          {/* Step 1: Personal Information */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Personal Information</h2>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">Create Your CV</h1>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="title" className="form-label">
-                    CV Title
-                  </label>
-                  <Field name="title" type="text" className="form-input" />
-                  <ErrorMessage name="title" component="div" className="form-error" />
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          CV created successfully! Redirecting...
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Form Column */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-6">
+              <label
+                htmlFor="title"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                CV Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="e.g., Software Developer CV"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Visibility
+              </label>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="isPublic">Make this CV public</label>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Public CVs can be viewed by anyone with the link
+              </p>
+            </div>
+
+            {/* Template Selection */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-4">Select Template</h2>
+              <div className="grid grid-cols-3 gap-4">
+                <div
+                  className={`border rounded-lg p-2 cursor-pointer ${
+                    selectedTemplate === "classic"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300"
+                  }`}
+                  onClick={() => setSelectedTemplate("classic")}
+                >
+                  <div className="aspect-w-8 aspect-h-11 bg-gray-100 mb-2 flex items-center justify-center">
+                    <div className="w-full h-full p-2">
+                      <div className="w-full h-2 bg-blue-500 mb-2"></div>
+                      <div className="w-1/2 h-2 bg-gray-300 mb-4"></div>
+                      <div className="space-y-1">
+                        <div className="w-full h-1 bg-gray-300"></div>
+                        <div className="w-full h-1 bg-gray-300"></div>
+                        <div className="w-3/4 h-1 bg-gray-300"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-center text-sm font-medium">Classic</p>
                 </div>
 
-                <div>
-                  <label htmlFor="template" className="form-label">
-                    Template
-                  </label>
-                  <Field as="select" name="template" className="form-input">
-                    {templates.map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.name}
-                      </option>
-                    ))}
-                  </Field>
-                  <ErrorMessage name="template" component="div" className="form-error" />
+                <div
+                  className={`border rounded-lg p-2 cursor-pointer ${
+                    selectedTemplate === "modern"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300"
+                  }`}
+                  onClick={() => setSelectedTemplate("modern")}
+                >
+                  <div className="aspect-w-8 aspect-h-11 bg-gray-100 mb-2 flex items-center justify-center">
+                    <div className="w-full h-full p-2 flex">
+                      <div className="w-1/3 h-full bg-gray-700"></div>
+                      <div className="w-2/3 h-full p-1">
+                        <div className="w-3/4 h-1 bg-gray-300 mb-2"></div>
+                        <div className="space-y-1">
+                          <div className="w-full h-1 bg-gray-300"></div>
+                          <div className="w-full h-1 bg-gray-300"></div>
+                          <div className="w-3/4 h-1 bg-gray-300"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-center text-sm font-medium">Modern</p>
+                </div>
+
+                <div
+                  className={`border rounded-lg p-2 cursor-pointer ${
+                    selectedTemplate === "minimal"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300"
+                  }`}
+                  onClick={() => setSelectedTemplate("minimal")}
+                >
+                  <div className="aspect-w-8 aspect-h-11 bg-gray-100 mb-2 flex items-center justify-center">
+                    <div className="w-full h-full p-2">
+                      <div className="w-1/2 mx-auto h-2 bg-gray-300 mb-4"></div>
+                      <div className="w-3/4 mx-auto h-1 bg-gray-300 mb-4"></div>
+                      <div className="space-y-2">
+                        <div className="w-full h-1 bg-gray-300"></div>
+                        <div className="w-full h-1 bg-gray-300"></div>
+                        <div className="w-3/4 h-1 bg-gray-300"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-center text-sm font-medium">Minimal</p>
                 </div>
               </div>
+            </div>
+
+            {/* Personal Information */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-4">Personal Information</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="personalInfo.full_name" className="form-label">
+                  <label
+                    htmlFor="full_name"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Full Name
                   </label>
-                  <Field name="personalInfo.full_name" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.full_name" component="div" className="form-error" />
+                  <input
+                    type="text"
+                    id="full_name"
+                    name="full_name"
+                    value={personalInfo.full_name}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <label htmlFor="personalInfo.email" className="form-label">
+                  <label
+                    htmlFor="email"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Email
                   </label>
-                  <Field name="personalInfo.email" type="email" className="form-input" />
-                  <ErrorMessage name="personalInfo.email" component="div" className="form-error" />
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={personalInfo.email}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="personalInfo.phone" className="form-label">
+                  <label
+                    htmlFor="phone"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Phone
                   </label>
-                  <Field name="personalInfo.phone" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.phone" component="div" className="form-error" />
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={personalInfo.phone}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
                 </div>
 
                 <div>
-                  <label htmlFor="personalInfo.address" className="form-label">
+                  <label
+                    htmlFor="address"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Address
                   </label>
-                  <Field name="personalInfo.address" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.address" component="div" className="form-error" />
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={personalInfo.address}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="personalInfo.linkedin" className="form-label">
+                  <label
+                    htmlFor="linkedin"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     LinkedIn
                   </label>
-                  <Field name="personalInfo.linkedin" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.linkedin" component="div" className="form-error" />
+                  <input
+                    type="text"
+                    id="linkedin"
+                    name="linkedin"
+                    value={personalInfo.linkedin}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="username"
+                  />
                 </div>
 
                 <div>
-                  <label htmlFor="personalInfo.github" className="form-label">
+                  <label
+                    htmlFor="github"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     GitHub
                   </label>
-                  <Field name="personalInfo.github" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.github" component="div" className="form-error" />
+                  <input
+                    type="text"
+                    id="github"
+                    name="github"
+                    value={personalInfo.github}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="username"
+                  />
                 </div>
 
                 <div>
-                  <label htmlFor="personalInfo.website" className="form-label">
+                  <label
+                    htmlFor="website"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Website
                   </label>
-                  <Field name="personalInfo.website" type="text" className="form-input" />
-                  <ErrorMessage name="personalInfo.website" component="div" className="form-error" />
+                  <input
+                    type="url"
+                    id="website"
+                    name="website"
+                    value={personalInfo.website}
+                    onChange={handlePersonalInfoChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="https://example.com"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="personalInfo.summary" className="form-label">
+              <div className="mt-4">
+                <label
+                  htmlFor="summary"
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                >
                   Professional Summary
                 </label>
-                <Field as="textarea" name="personalInfo.summary" rows="4" className="form-input" />
-                <ErrorMessage name="personalInfo.summary" component="div" className="form-error" />
-              </div>
-
-              <div className="flex justify-end">
-                <button type="button" onClick={goToNextStep} className="btn btn-primary">
-                  Next: Education
-                </button>
+                <textarea
+                  id="summary"
+                  name="summary"
+                  value={personalInfo.summary}
+                  onChange={handlePersonalInfoChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  rows="4"
+                ></textarea>
               </div>
             </div>
-          )}
 
-          {/* Step 2: Education */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Education</h2>
+            {/* Education */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Education</h2>
+                <button
+                  type="button"
+                  onClick={addEducation}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                >
+                  + Add Education
+                </button>
+              </div>
 
-              <FieldArray name="education">
-                {({ remove, push }) => (
-                  <div className="space-y-6">
-                    {values.education.map((_, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-medium">Education #{index + 1}</h3>
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FaTrash />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`education.${index}.institution`} className="form-label">
-                              Institution
-                            </label>
-                            <Field name={`education.${index}.institution`} type="text" className="form-input" />
-                            <ErrorMessage
-                              name={`education.${index}.institution`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`education.${index}.degree`} className="form-label">
-                              Degree
-                            </label>
-                            <Field name={`education.${index}.degree`} type="text" className="form-input" />
-                            <ErrorMessage name={`education.${index}.degree`} component="div" className="form-error" />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label htmlFor={`education.${index}.field_of_study`} className="form-label">
-                              Field of Study
-                            </label>
-                            <Field name={`education.${index}.field_of_study`} type="text" className="form-input" />
-                            <ErrorMessage
-                              name={`education.${index}.field_of_study`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`education.${index}.start_date`} className="form-label">
-                              Start Date
-                            </label>
-                            <Field name={`education.${index}.start_date`} type="date" className="form-input" />
-                            <ErrorMessage
-                              name={`education.${index}.start_date`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`education.${index}.end_date`} className="form-label">
-                              End Date
-                            </label>
-                            <Field name={`education.${index}.end_date`} type="date" className="form-input" />
-                            <ErrorMessage name={`education.${index}.end_date`} component="div" className="form-error" />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`education.${index}.gpa`} className="form-label">
-                              GPA
-                            </label>
-                            <Field name={`education.${index}.gpa`} type="number" step="0.01" className="form-input" />
-                            <ErrorMessage name={`education.${index}.gpa`} component="div" className="form-error" />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label htmlFor={`education.${index}.description`} className="form-label">
-                            Description
-                          </label>
-                          <Field
-                            as="textarea"
-                            name={`education.${index}.description`}
-                            rows="3"
-                            className="form-input"
-                          />
-                          <ErrorMessage
-                            name={`education.${index}.description`}
-                            component="div"
-                            className="form-error"
-                          />
-                        </div>
-                      </div>
-                    ))}
-
+              {education.map((edu, index) => (
+                <div key={index} className="mb-4 p-4 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold">Education #{index + 1}</h3>
                     <button
                       type="button"
-                      onClick={() =>
-                        push({
-                          institution: "",
-                          degree: "",
-                          field_of_study: "",
-                          start_date: "",
-                          end_date: "",
-                          gpa: "",
-                          description: "",
-                        })
-                      }
-                      className="btn btn-outline flex items-center"
+                      onClick={() => removeEducation(index)}
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <FaPlus className="mr-2" /> Add Education
+                      Remove
                     </button>
                   </div>
-                )}
-              </FieldArray>
 
-              <div className="flex justify-between">
-                <button type="button" onClick={goToPreviousStep} className="btn btn-outline">
-                  Previous: Personal Info
-                </button>
-                <button type="button" onClick={goToNextStep} className="btn btn-primary">
-                  Next: Experience
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Experience */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Work Experience</h2>
-
-              <FieldArray name="experience">
-                {({ remove, push }) => (
-                  <div className="space-y-6">
-                    {values.experience.map((_, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-medium">Experience #{index + 1}</h3>
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FaTrash />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`experience.${index}.company`} className="form-label">
-                              Company
-                            </label>
-                            <Field name={`experience.${index}.company`} type="text" className="form-input" />
-                            <ErrorMessage name={`experience.${index}.company`} component="div" className="form-error" />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`experience.${index}.position`} className="form-label">
-                              Position
-                            </label>
-                            <Field name={`experience.${index}.position`} type="text" className="form-input" />
-                            <ErrorMessage
-                              name={`experience.${index}.position`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label htmlFor={`experience.${index}.start_date`} className="form-label">
-                              Start Date
-                            </label>
-                            <Field name={`experience.${index}.start_date`} type="date" className="form-input" />
-                            <ErrorMessage
-                              name={`experience.${index}.start_date`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`experience.${index}.end_date`} className="form-label">
-                              End Date
-                            </label>
-                            <Field
-                              name={`experience.${index}.end_date`}
-                              type="date"
-                              className="form-input"
-                              disabled={values.experience[index].is_current}
-                            />
-                            <ErrorMessage
-                              name={`experience.${index}.end_date`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div className="flex items-center">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <Field
-                                type="checkbox"
-                                name={`experience.${index}.is_current`}
-                                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                              />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">Current Position</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label htmlFor={`experience.${index}.description`} className="form-label">
-                            Description
-                          </label>
-                          <Field
-                            as="textarea"
-                            name={`experience.${index}.description`}
-                            rows="3"
-                            className="form-input"
-                          />
-                          <ErrorMessage
-                            name={`experience.${index}.description`}
-                            component="div"
-                            className="form-error"
-                          />
-                        </div>
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        push({
-                          company: "",
-                          position: "",
-                          start_date: "",
-                          end_date: "",
-                          is_current: false,
-                          description: "",
-                        })
-                      }
-                      className="btn btn-outline flex items-center"
-                    >
-                      <FaPlus className="mr-2" /> Add Experience
-                    </button>
-                  </div>
-                )}
-              </FieldArray>
-
-              <div className="flex justify-between">
-                <button type="button" onClick={goToPreviousStep} className="btn btn-outline">
-                  Previous: Education
-                </button>
-                <button type="button" onClick={goToNextStep} className="btn btn-primary">
-                  Next: Skills
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Skills */}
-          {currentStep === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Skills</h2>
-
-              <FieldArray name="skills">
-                {({ remove, push }) => (
-                  <div className="space-y-6">
-                    {values.skills.map((_, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-medium">Skill #{index + 1}</h3>
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FaTrash />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`skills.${index}.name`} className="form-label">
-                              Skill Name
-                            </label>
-                            <Field name={`skills.${index}.name`} type="text" className="form-input" />
-                            <ErrorMessage name={`skills.${index}.name`} component="div" className="form-error" />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`skills.${index}.proficiency`} className="form-label">
-                              Proficiency
-                            </label>
-                            <Field as="select" name={`skills.${index}.proficiency`} className="form-input">
-                              <option value="beginner">Beginner</option>
-                              <option value="intermediate">Intermediate</option>
-                              <option value="advanced">Advanced</option>
-                              <option value="expert">Expert</option>
-                            </Field>
-                            <ErrorMessage name={`skills.${index}.proficiency`} component="div" className="form-error" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        push({
-                          name: "",
-                          proficiency: "intermediate",
-                        })
-                      }
-                      className="btn btn-outline flex items-center"
-                    >
-                      <FaPlus className="mr-2" /> Add Skill
-                    </button>
-                  </div>
-                )}
-              </FieldArray>
-
-              <div className="flex justify-between">
-                <button type="button" onClick={goToPreviousStep} className="btn btn-outline">
-                  Previous: Experience
-                </button>
-                <button type="button" onClick={goToNextStep} className="btn btn-primary">
-                  Next: Projects
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Projects */}
-          {currentStep === 5 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Projects</h2>
-
-              <FieldArray name="projects">
-                {({ remove, push }) => (
-                  <div className="space-y-6">
-                    {values.projects.map((_, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-medium">Project #{index + 1}</h3>
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FaTrash />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`projects.${index}.name`} className="form-label">
-                              Project Name
-                            </label>
-                            <Field name={`projects.${index}.name`} type="text" className="form-input" />
-                            <ErrorMessage name={`projects.${index}.name`} component="div" className="form-error" />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`projects.${index}.url`} className="form-label">
-                              Project URL
-                            </label>
-                            <Field name={`projects.${index}.url`} type="text" className="form-input" />
-                            <ErrorMessage name={`projects.${index}.url`} component="div" className="form-error" />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor={`projects.${index}.start_date`} className="form-label">
-                              Start Date
-                            </label>
-                            <Field name={`projects.${index}.start_date`} type="date" className="form-input" />
-                            <ErrorMessage
-                              name={`projects.${index}.start_date`}
-                              component="div"
-                              className="form-error"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor={`projects.${index}.end_date`} className="form-label">
-                              End Date
-                            </label>
-                            <Field name={`projects.${index}.end_date`} type="date" className="form-input" />
-                            <ErrorMessage name={`projects.${index}.end_date`} component="div" className="form-error" />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label htmlFor={`projects.${index}.description`} className="form-label">
-                            Description
-                          </label>
-                          <Field as="textarea" name={`projects.${index}.description`} rows="3" className="form-input" />
-                          <ErrorMessage name={`projects.${index}.description`} component="div" className="form-error" />
-                        </div>
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        push({
-                          name: "",
-                          description: "",
-                          start_date: "",
-                          end_date: "",
-                          url: "",
-                        })
-                      }
-                      className="btn btn-outline flex items-center"
-                    >
-                      <FaPlus className="mr-2" /> Add Project
-                    </button>
-                  </div>
-                )}
-              </FieldArray>
-
-              <div className="flex justify-between">
-                <button type="button" onClick={goToPreviousStep} className="btn btn-outline">
-                  Previous: Skills
-                </button>
-                <button type="button" onClick={goToNextStep} className="btn btn-primary">
-                  Next: Finalize
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: Finalize */}
-          {currentStep === 6 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Finalize Your CV</h2>
-
-              {/* Categories */}
-              <div>
-                <label className="form-label">Categories (Select at least one)</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-1">
-                  {categories.map((category) => (
-                    <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
-                      <Field
-                        type="checkbox"
-                        name="categories"
-                        value={category.id.toString()}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Institution
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.institution}
+                        onChange={(e) =>
+                          updateEducation(index, "institution", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{category.name}</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Degree
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.degree}
+                        onChange={(e) =>
+                          updateEducation(index, "degree", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Field of Study
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.field_of_study}
+                        onChange={(e) =>
+                          updateEducation(
+                            index,
+                            "field_of_study",
+                            e.target.value
+                          )
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        GPA
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.gpa}
+                        onChange={(e) =>
+                          updateEducation(index, "gpa", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={edu.start_date}
+                        onChange={(e) =>
+                          updateEducation(index, "start_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={edu.end_date}
+                        onChange={(e) =>
+                          updateEducation(index, "end_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Description
                     </label>
-                  ))}
+                    <textarea
+                      value={edu.description}
+                      onChange={(e) =>
+                        updateEducation(index, "description", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      rows="3"
+                    ></textarea>
+                  </div>
                 </div>
-                <ErrorMessage name="categories" component="div" className="form-error" />
-              </div>
+              ))}
 
-              {/* Public/Private */}
-              <div>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <Field
-                    type="checkbox"
-                    name="isPublic"
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Make this CV public (visible to HR professionals)
-                  </span>
-                </label>
-              </div>
-
-              {/* AI Suggestions */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium mb-4">AI Suggestions</h3>
-
-                {aiSuggestions ? (
-                  <div className="space-y-4">
-                    {aiSuggestions.summary && (
-                      <div>
-                        <h4 className="text-md font-medium">Suggested Summary</h4>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-                          {aiSuggestions.summary}
-                        </p>
-                      </div>
-                    )}
-
-                    {aiSuggestions.careerPaths && (
-                      <div>
-                        <h4 className="text-md font-medium">Career Path Suggestions</h4>
-                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300">
-                          {aiSuggestions.careerPaths.map((path, index) => (
-                            <li key={index}>{path}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {aiSuggestions.skillsToAcquire && (
-                      <div>
-                        <h4 className="text-md font-medium">Skills to Acquire</h4>
-                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300">
-                          {aiSuggestions.skillsToAcquire.map((skill, index) => (
-                            <li key={index}>{skill}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {aiSuggestions.improvements && (
-                      <div>
-                        <h4 className="text-md font-medium">CV Improvements</h4>
-                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300">
-                          {aiSuggestions.improvements.map((improvement, index) => (
-                            <li key={index}>{improvement}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => applyAISuggestions(setFieldValue)}
-                      className="btn btn-secondary"
-                    >
-                      Apply AI Suggestions
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                      Generate AI suggestions based on your CV information to improve your resume and get career advice.
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => generateAISuggestions(values)}
-                      disabled={isGeneratingAI}
-                      className="btn btn-primary flex items-center mx-auto"
-                    >
-                      {isGeneratingAI ? (
-                        <>
-                          <FaSpinner className="animate-spin mr-2" /> Generating...
-                        </>
-                      ) : (
-                        <>Generate AI Suggestions</>
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between">
-                <button type="button" onClick={goToPreviousStep} className="btn btn-outline">
-                  Previous: Projects
-                </button>
-                <button type="submit" disabled={isSubmitting || !isValid} className="btn btn-primary">
-                  {isSubmitting ? (
-                    <>
-                      <FaSpinner className="animate-spin mr-2" /> Creating CV...
-                    </>
-                  ) : (
-                    <>Create CV</>
-                  )}
-                </button>
-              </div>
+              {education.length === 0 && (
+                <p className="text-gray-500 italic">
+                  No education added yet. Click the button above to add your
+                  education history.
+                </p>
+              )}
             </div>
-          )}
-        </Form>
-      )}
-    </Formik>
-  )
-}
 
-export default CVForm
+            {/* Experience */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Experience</h2>
+                <button
+                  type="button"
+                  onClick={addExperience}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                >
+                  + Add Experience
+                </button>
+              </div>
 
+              {experience.map((exp, index) => (
+                <div key={index} className="mb-4 p-4 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold">Experience #{index + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => removeExperience(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Company
+                      </label>
+                      <input
+                        type="text"
+                        value={exp.company}
+                        onChange={(e) =>
+                          updateExperience(index, "company", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Position
+                      </label>
+                      <input
+                        type="text"
+                        value={exp.position}
+                        onChange={(e) =>
+                          updateExperience(index, "position", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={exp.start_date}
+                        onChange={(e) =>
+                          updateExperience(index, "start_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={exp.end_date}
+                        onChange={(e) =>
+                          updateExperience(index, "end_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        disabled={exp.is_current}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={exp.is_current}
+                          onChange={(e) =>
+                            updateExperience(
+                              index,
+                              "is_current",
+                              e.target.checked
+                            )
+                          }
+                          className="mr-2"
+                        />
+                        <span className="text-sm">I currently work here</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={exp.description}
+                      onChange={(e) =>
+                        updateExperience(index, "description", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                </div>
+              ))}
+
+              {experience.length === 0 && (
+                <p className="text-gray-500 italic">
+                  No experience added yet. Click the button above to add your
+                  work experience.
+                </p>
+              )}
+            </div>
+
+            {/* Skills */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Skills</h2>
+                <button
+                  type="button"
+                  onClick={addSkill}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                >
+                  + Add Skill
+                </button>
+              </div>
+
+              {skills.map((skill, index) => (
+                <div key={index} className="mb-4 p-4 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold">Skill #{index + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => removeSkill(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Skill Name
+                      </label>
+                      <input
+                        type="text"
+                        value={skill.name}
+                        onChange={(e) =>
+                          updateSkill(index, "name", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Proficiency
+                      </label>
+                      <select
+                        value={skill.proficiency}
+                        onChange={(e) =>
+                          updateSkill(index, "proficiency", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      >
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="expert">Expert</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {skills.length === 0 && (
+                <p className="text-gray-500 italic">
+                  No skills added yet. Click the button above to add your
+                  skills.
+                </p>
+              )}
+            </div>
+
+            {/* Projects */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Projects</h2>
+                <button
+                  type="button"
+                  onClick={addProject}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                >
+                  + Add Project
+                </button>
+              </div>
+
+              {projects.map((project, index) => (
+                <div key={index} className="mb-4 p-4 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold">Project #{index + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => removeProject(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Project Name
+                      </label>
+                      <input
+                        type="text"
+                        value={project.name}
+                        onChange={(e) =>
+                          updateProject(index, "name", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Project URL
+                      </label>
+                      <input
+                        type="url"
+                        value={project.url}
+                        onChange={(e) =>
+                          updateProject(index, "url", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={project.start_date}
+                        onChange={(e) =>
+                          updateProject(index, "start_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={project.end_date}
+                        onChange={(e) =>
+                          updateProject(index, "end_date", e.target.value)
+                        }
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={project.description}
+                      onChange={(e) =>
+                        updateProject(index, "description", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                </div>
+              ))}
+
+              {projects.length === 0 && (
+                <p className="text-gray-500 italic">
+                  No projects added yet. Click the button above to add your
+                  projects.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create CV"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Preview Column */}
+        <div className="hidden lg:block sticky top-4 h-[calc(100vh-2rem)]">
+          <h2 className="text-xl font-bold mb-4">Preview</h2>
+          <CVPreview formData={previewData} template={selectedTemplate} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CVForm;
