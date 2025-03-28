@@ -35,7 +35,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/cvs", cvRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/ai", aiRoutes);
-app.use("/api/questionnaire", questionnaireRoutes);
 
 // Root route
 app.get("/", (req, res) => {
