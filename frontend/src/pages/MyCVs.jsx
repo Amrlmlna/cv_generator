@@ -1,96 +1,104 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import axios from "axios"
-import { toast } from "react-toastify"
-import { FaPlus, FaSpinner } from "react-icons/fa"
-import CVCard from "../components/CVCard"
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import CVCard from "../components/CVCard";
+import { useAuth } from "../context/AuthContext";
 
 const MyCVs = () => {
-  const [cvs, setCVs] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [cvs, setCvs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
 
-  // Fetch CVs on component mount
   useEffect(() => {
-    fetchCVs()
-  }, [])
+    const fetchCVs = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get("/api/cvs", {
+          headers: { "x-auth-token": localStorage.getItem("token") },
+        });
 
-  // Fetch CVs from API
-  const fetchCVs = async () => {
-    try {
-      setIsLoading(true)
-      const response = await axios.get("/api/cvs")
+        console.log("CV data received:", response.data); // Debug log
 
-      if (response.data.success) {
-        setCVs(response.data.cvs)
+        if (response.data.success) {
+          // Ensure we have valid CV data
+          const validCvs = response.data.cvs.filter(
+            (cv) => cv && typeof cv === "object"
+          );
+          console.log("Filtered valid CVs:", validCvs); // Debug log
+          setCvs(validCvs);
+        } else {
+          setError("Failed to fetch CVs");
+        }
+      } catch (err) {
+        console.error("Error fetching CVs:", err);
+        setError(err.response?.data?.message || "Failed to fetch CVs");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching CVs:", error)
-      toast.error("Failed to load your CVs. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+    };
+
+    fetchCVs();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
-  // Delete CV
-  const handleDeleteCV = async (cvId) => {
-    if (!confirm("Are you sure you want to delete this CV?")) {
-      return
-    }
-
-    try {
-      const response = await axios.delete(`/api/cvs/${cvId}`)
-
-      if (response.data.success) {
-        setCVs(cvs.filter((cv) => cv.id !== cvId))
-        toast.success("CV deleted successfully!")
-      }
-    } catch (error) {
-      console.error("Error deleting CV:", error)
-      toast.error("Failed to delete CV. Please try again.")
-    }
+  if (error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {error}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold mb-2">My CVs</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your created CVs</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage your created CVs and templates
+            </p>
           </div>
-
           <Link
             to="/create-cv"
-            className="btn btn-primary mt-4 sm:mt-0 flex items-center justify-center sm:justify-start"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            <FaPlus className="mr-2" /> Create New CV
+            Create New CV
           </Link>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <FaSpinner className="animate-spin h-8 w-8 text-primary-500" />
-        </div>
-      ) : cvs.length === 0 ? (
+      {cvs.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">You haven't created any CVs yet.</p>
-          <Link to="/create-cv" className="btn btn-primary inline-flex items-center">
-            <FaPlus className="mr-2" /> Create Your First CV
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            You haven't created any CVs yet.
+          </p>
+          <Link
+            to="/create-cv"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block"
+          >
+            Create Your First CV
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cvs.map((cv) => (
-            <CVCard key={cv.id} cv={cv} onDelete={handleDeleteCV} />
+          {cvs.map((cv, index) => (
+            <CVCard key={cv.id || index} cv={cv} />
           ))}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default MyCVs
-
+export default MyCVs;

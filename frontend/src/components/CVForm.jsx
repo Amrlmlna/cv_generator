@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CVPreview from "./CVPreview";
 
-const CVForm = () => {
+const CVForm = ({ onSubmitSuccess }) => {
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [title, setTitle] = useState("");
   const [isPublic, setIsPublic] = useState(false);
@@ -37,6 +37,7 @@ const CVForm = () => {
   const [experience, setExperience] = useState([]);
   const [skills, setSkills] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -62,7 +63,23 @@ const CVForm = () => {
       }
     };
 
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get("/api/categories", {
+          headers: { "x-auth-token": localStorage.getItem("token") },
+        });
+
+        if (res.data.categories) {
+          setCategories(res.data.categories);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+
     fetchPersonalInfo();
+    fetchCategories();
   }, [navigate]);
 
   useEffect(() => {
@@ -186,97 +203,41 @@ const CVForm = () => {
       setLoading(true);
       setError(null);
 
-      // First, create or update personal info
-      const personalInfoRes = await axios.post(
-        "/api/users/personal-info",
-        personalInfo,
-        {
-          headers: { "x-auth-token": localStorage.getItem("token") },
-        }
-      );
-
-      const personalInfoId = personalInfoRes.data.id;
-
-      // Create CV
+      // Prepare data for submission
       const cvData = {
         title,
         template: selectedTemplate,
-        is_public: isPublic,
-        personal_info_id: personalInfoId,
+        personalInfo,
+        education,
+        experience,
+        skills,
+        projects,
+        categories: [1], // Default to first category if none selected
+        isPublic,
       };
 
-      const cvRes = await axios.post("/api/cvs", cvData, {
+      // Send data to the backend
+      const response = await axios.post("/api/cvs", cvData, {
         headers: { "x-auth-token": localStorage.getItem("token") },
       });
-
-      const cvId = cvRes.data.id;
-
-      // Add education
-      for (const edu of education) {
-        await axios.post(
-          "/api/cvs/education",
-          {
-            ...edu,
-            personal_info_id: personalInfoId,
-          },
-          {
-            headers: { "x-auth-token": localStorage.getItem("token") },
-          }
-        );
-      }
-
-      // Add experience
-      for (const exp of experience) {
-        await axios.post(
-          "/api/cvs/experience",
-          {
-            ...exp,
-            personal_info_id: personalInfoId,
-          },
-          {
-            headers: { "x-auth-token": localStorage.getItem("token") },
-          }
-        );
-      }
-
-      // Add skills
-      for (const skill of skills) {
-        await axios.post(
-          "/api/cvs/skills",
-          {
-            ...skill,
-            personal_info_id: personalInfoId,
-          },
-          {
-            headers: { "x-auth-token": localStorage.getItem("token") },
-          }
-        );
-      }
-
-      // Add projects
-      for (const project of projects) {
-        await axios.post(
-          "/api/cvs/projects",
-          {
-            ...project,
-            personal_info_id: personalInfoId,
-          },
-          {
-            headers: { "x-auth-token": localStorage.getItem("token") },
-          }
-        );
-      }
 
       setSuccess(true);
       setLoading(false);
 
+      // Call the success callback if provided
+      if (onSubmitSuccess) {
+        onSubmitSuccess(response.data.cv);
+      }
+
       // Redirect to view CV page
       setTimeout(() => {
-        navigate(`/view-cv/${cvId}`);
+        navigate(`/view-cv/${response.data.cv.id}`);
       }, 2000);
     } catch (err) {
       console.error("Error creating CV:", err);
-      setError("Failed to create CV. Please try again.");
+      setError(
+        err.response?.data?.message || "Failed to create CV. Please try again."
+      );
       setLoading(false);
     }
   };
