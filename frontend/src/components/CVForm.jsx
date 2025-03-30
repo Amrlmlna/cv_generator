@@ -4,9 +4,21 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import CVPreview from "./CVPreview";
+import CompactCVPreview from "./CompactCVPreview";
+import {
+  User,
+  Book,
+  Briefcase,
+  Wrench,
+  FileText,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  Save,
+} from "lucide-react";
 
 const CVForm = ({ onSubmitSuccess }) => {
+  const [activeTab, setActiveTab] = useState("basic");
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [title, setTitle] = useState("");
   const [isPublic, setIsPublic] = useState(false);
@@ -83,12 +95,15 @@ const CVForm = ({ onSubmitSuccess }) => {
   }, [navigate]);
 
   useEffect(() => {
+    // Always provide complete data structure for preview
     setPreviewData({
-      personalInfo,
-      education,
-      experience,
-      skills,
-      projects,
+      personalInfo: {
+        ...personalInfo,
+      },
+      education: education.length > 0 ? education : [],
+      experience: experience.length > 0 ? experience : [],
+      skills: skills.length > 0 ? skills : [],
+      projects: projects.length > 0 ? projects : [],
     });
   }, [personalInfo, education, experience, skills, projects]);
 
@@ -242,26 +257,59 @@ const CVForm = ({ onSubmitSuccess }) => {
     }
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Create Your CV</h1>
+  const nextTab = () => {
+    if (activeTab === "basic") setActiveTab("education");
+    else if (activeTab === "education") setActiveTab("experience");
+    else if (activeTab === "experience") setActiveTab("skills");
+    else if (activeTab === "skills") setActiveTab("projects");
+    else if (activeTab === "projects") setActiveTab("review");
+  };
 
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          CV created successfully! Redirecting...
-        </div>
-      )}
+  const prevTab = () => {
+    if (activeTab === "review") setActiveTab("projects");
+    else if (activeTab === "projects") setActiveTab("skills");
+    else if (activeTab === "skills") setActiveTab("experience");
+    else if (activeTab === "experience") setActiveTab("education");
+    else if (activeTab === "education") setActiveTab("basic");
+  };
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+  // Calculate completion percentage
+  const calculateCompletion = () => {
+    let total = 0;
+    let completed = 0;
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Form Column */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <form onSubmit={handleSubmit}>
+    // Basic info (title, template, visibility)
+    total += 3;
+    if (title) completed += 1;
+    if (selectedTemplate) completed += 1;
+    completed += 1; // Visibility is always set
+
+    // Personal info
+    const personalInfoFields = Object.keys(personalInfo).length;
+    total += personalInfoFields;
+    completed += Object.values(personalInfo).filter((val) => val).length;
+
+    // Education, Experience, Skills, Projects
+    // Just check if they exist for simplicity
+    total += 4;
+    if (education.length > 0) completed += 1;
+    if (experience.length > 0) completed += 1;
+    if (skills.length > 0) completed += 1;
+    if (projects.length > 0) completed += 1;
+
+    return Math.round((completed / total) * 100);
+  };
+
+  const completionPercentage = calculateCompletion();
+
+  // Render the active tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "basic":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4">Basic Information</h2>
+
             <div className="mb-6">
               <label
                 htmlFor="title"
@@ -292,16 +340,30 @@ const CVForm = ({ onSubmitSuccess }) => {
                   onChange={(e) => setIsPublic(e.target.checked)}
                   className="mr-2"
                 />
-                <label htmlFor="isPublic">Make this CV public</label>
+                <label htmlFor="isPublic" className="flex items-center">
+                  {isPublic ? (
+                    <>
+                      <Eye className="h-4 w-4 mr-1" />
+                      <span>Public CV</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-1" />
+                      <span>Private CV</span>
+                    </>
+                  )}
+                </label>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Public CVs can be viewed by anyone with the link
+                {isPublic
+                  ? "Public CVs can be viewed by anyone with the link"
+                  : "Private CVs can only be viewed by you"}
               </p>
             </div>
 
             {/* Template Selection */}
             <div className="mb-6">
-              <h2 className="text-xl font-bold mb-4">Select Template</h2>
+              <h2 className="text-lg font-bold mb-4">Select Template</h2>
               <div className="grid grid-cols-3 gap-4">
                 <div
                   className={`border rounded-lg p-2 cursor-pointer ${
@@ -375,7 +437,7 @@ const CVForm = ({ onSubmitSuccess }) => {
 
             {/* Personal Information */}
             <div className="mb-6">
-              <h2 className="text-xl font-bold mb-4">Personal Information</h2>
+              <h2 className="text-lg font-bold mb-4">Personal Information</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -521,474 +583,745 @@ const CVForm = ({ onSubmitSuccess }) => {
               </div>
             </div>
 
-            {/* Education */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Education</h2>
-                <button
-                  type="button"
-                  onClick={addEducation}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
-                >
-                  + Add Education
-                </button>
-              </div>
-
-              {education.map((edu, index) => (
-                <div key={index} className="mb-4 p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">Education #{index + 1}</h3>
-                    <button
-                      type="button"
-                      onClick={() => removeEducation(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Institution
-                      </label>
-                      <input
-                        type="text"
-                        value={edu.institution}
-                        onChange={(e) =>
-                          updateEducation(index, "institution", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Degree
-                      </label>
-                      <input
-                        type="text"
-                        value={edu.degree}
-                        onChange={(e) =>
-                          updateEducation(index, "degree", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Field of Study
-                      </label>
-                      <input
-                        type="text"
-                        value={edu.field_of_study}
-                        onChange={(e) =>
-                          updateEducation(
-                            index,
-                            "field_of_study",
-                            e.target.value
-                          )
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        GPA
-                      </label>
-                      <input
-                        type="text"
-                        value={edu.gpa}
-                        onChange={(e) =>
-                          updateEducation(index, "gpa", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={edu.start_date}
-                        onChange={(e) =>
-                          updateEducation(index, "start_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={edu.end_date}
-                        onChange={(e) =>
-                          updateEducation(index, "end_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={edu.description}
-                      onChange={(e) =>
-                        updateEducation(index, "description", e.target.value)
-                      }
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      rows="3"
-                    ></textarea>
-                  </div>
-                </div>
-              ))}
-
-              {education.length === 0 && (
-                <p className="text-gray-500 italic">
-                  No education added yet. Click the button above to add your
-                  education history.
-                </p>
-              )}
-            </div>
-
-            {/* Experience */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Experience</h2>
-                <button
-                  type="button"
-                  onClick={addExperience}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
-                >
-                  + Add Experience
-                </button>
-              </div>
-
-              {experience.map((exp, index) => (
-                <div key={index} className="mb-4 p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">Experience #{index + 1}</h3>
-                    <button
-                      type="button"
-                      onClick={() => removeExperience(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Company
-                      </label>
-                      <input
-                        type="text"
-                        value={exp.company}
-                        onChange={(e) =>
-                          updateExperience(index, "company", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Position
-                      </label>
-                      <input
-                        type="text"
-                        value={exp.position}
-                        onChange={(e) =>
-                          updateExperience(index, "position", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={exp.start_date}
-                        onChange={(e) =>
-                          updateExperience(index, "start_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={exp.end_date}
-                        onChange={(e) =>
-                          updateExperience(index, "end_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        disabled={exp.is_current}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={exp.is_current}
-                          onChange={(e) =>
-                            updateExperience(
-                              index,
-                              "is_current",
-                              e.target.checked
-                            )
-                          }
-                          className="mr-2"
-                        />
-                        <span className="text-sm">I currently work here</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={exp.description}
-                      onChange={(e) =>
-                        updateExperience(index, "description", e.target.value)
-                      }
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      rows="3"
-                    ></textarea>
-                  </div>
-                </div>
-              ))}
-
-              {experience.length === 0 && (
-                <p className="text-gray-500 italic">
-                  No experience added yet. Click the button above to add your
-                  work experience.
-                </p>
-              )}
-            </div>
-
-            {/* Skills */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Skills</h2>
-                <button
-                  type="button"
-                  onClick={addSkill}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
-                >
-                  + Add Skill
-                </button>
-              </div>
-
-              {skills.map((skill, index) => (
-                <div key={index} className="mb-4 p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">Skill #{index + 1}</h3>
-                    <button
-                      type="button"
-                      onClick={() => removeSkill(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Skill Name
-                      </label>
-                      <input
-                        type="text"
-                        value={skill.name}
-                        onChange={(e) =>
-                          updateSkill(index, "name", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Proficiency
-                      </label>
-                      <select
-                        value={skill.proficiency}
-                        onChange={(e) =>
-                          updateSkill(index, "proficiency", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      >
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
-                        <option value="expert">Expert</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {skills.length === 0 && (
-                <p className="text-gray-500 italic">
-                  No skills added yet. Click the button above to add your
-                  skills.
-                </p>
-              )}
-            </div>
-
-            {/* Projects */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Projects</h2>
-                <button
-                  type="button"
-                  onClick={addProject}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
-                >
-                  + Add Project
-                </button>
-              </div>
-
-              {projects.map((project, index) => (
-                <div key={index} className="mb-4 p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">Project #{index + 1}</h3>
-                    <button
-                      type="button"
-                      onClick={() => removeProject(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Project Name
-                      </label>
-                      <input
-                        type="text"
-                        value={project.name}
-                        onChange={(e) =>
-                          updateProject(index, "name", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Project URL
-                      </label>
-                      <input
-                        type="url"
-                        value={project.url}
-                        onChange={(e) =>
-                          updateProject(index, "url", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        placeholder="https://example.com"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={project.start_date}
-                        onChange={(e) =>
-                          updateProject(index, "start_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={project.end_date}
-                        onChange={(e) =>
-                          updateProject(index, "end_date", e.target.value)
-                        }
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={project.description}
-                      onChange={(e) =>
-                        updateProject(index, "description", e.target.value)
-                      }
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      rows="3"
-                    ></textarea>
-                  </div>
-                </div>
-              ))}
-
-              {projects.length === 0 && (
-                <p className="text-gray-500 italic">
-                  No projects added yet. Click the button above to add your
-                  projects.
-                </p>
-              )}
-            </div>
-
             <div className="flex justify-end">
               <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                disabled={loading}
+                type="button"
+                onClick={nextTab}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
               >
-                {loading ? "Creating..." : "Create CV"}
+                Next <ChevronRight className="ml-2 h-4 w-4" />
               </button>
             </div>
-          </form>
+          </div>
+        );
+
+      case "education":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Education</h2>
+              <button
+                type="button"
+                onClick={addEducation}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+              >
+                + Add Education
+              </button>
+            </div>
+
+            {education.map((edu, index) => (
+              <div key={index} className="mb-4 p-4 border rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold">Education #{index + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => removeEducation(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Institution
+                    </label>
+                    <input
+                      type="text"
+                      value={edu.institution}
+                      onChange={(e) =>
+                        updateEducation(index, "institution", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Degree
+                    </label>
+                    <input
+                      type="text"
+                      value={edu.degree}
+                      onChange={(e) =>
+                        updateEducation(index, "degree", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Field of Study
+                    </label>
+                    <input
+                      type="text"
+                      value={edu.field_of_study}
+                      onChange={(e) =>
+                        updateEducation(index, "field_of_study", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      GPA
+                    </label>
+                    <input
+                      type="text"
+                      value={edu.gpa}
+                      onChange={(e) =>
+                        updateEducation(index, "gpa", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={edu.start_date}
+                      onChange={(e) =>
+                        updateEducation(index, "start_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={edu.end_date}
+                      onChange={(e) =>
+                        updateEducation(index, "end_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={edu.description}
+                    onChange={(e) =>
+                      updateEducation(index, "description", e.target.value)
+                    }
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            ))}
+
+            {education.length === 0 && (
+              <p className="text-gray-500 italic">
+                No education added yet. Click the button above to add your
+                education history.
+              </p>
+            )}
+
+            <div className="flex justify-between mt-4">
+              <button
+                type="button"
+                onClick={prevTab}
+                className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={nextTab}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case "experience":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Experience</h2>
+              <button
+                type="button"
+                onClick={addExperience}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+              >
+                + Add Experience
+              </button>
+            </div>
+
+            {experience.map((exp, index) => (
+              <div key={index} className="mb-4 p-4 border rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold">Experience #{index + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => removeExperience(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      value={exp.company}
+                      onChange={(e) =>
+                        updateExperience(index, "company", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Position
+                    </label>
+                    <input
+                      type="text"
+                      value={exp.position}
+                      onChange={(e) =>
+                        updateExperience(index, "position", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={exp.start_date}
+                      onChange={(e) =>
+                        updateExperience(index, "start_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={exp.end_date}
+                      onChange={(e) =>
+                        updateExperience(index, "end_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      disabled={exp.is_current}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={exp.is_current}
+                        onChange={(e) =>
+                          updateExperience(
+                            index,
+                            "is_current",
+                            e.target.checked
+                          )
+                        }
+                        className="mr-2"
+                      />
+                      <span className="text-sm">I currently work here</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={exp.description}
+                    onChange={(e) =>
+                      updateExperience(index, "description", e.target.value)
+                    }
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            ))}
+
+            {experience.length === 0 && (
+              <p className="text-gray-500 italic">
+                No experience added yet. Click the button above to add your work
+                experience.
+              </p>
+            )}
+
+            <div className="flex justify-between mt-4">
+              <button
+                type="button"
+                onClick={prevTab}
+                className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={nextTab}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case "skills":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Skills</h2>
+              <button
+                type="button"
+                onClick={addSkill}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+              >
+                + Add Skill
+              </button>
+            </div>
+
+            {skills.map((skill, index) => (
+              <div key={index} className="mb-4 p-4 border rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold">Skill #{index + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Skill Name
+                    </label>
+                    <input
+                      type="text"
+                      value={skill.name}
+                      onChange={(e) =>
+                        updateSkill(index, "name", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Proficiency
+                    </label>
+                    <select
+                      value={skill.proficiency}
+                      onChange={(e) =>
+                        updateSkill(index, "proficiency", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                      <option value="expert">Expert</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {skills.length === 0 && (
+              <p className="text-gray-500 italic">
+                No skills added yet. Click the button above to add your skills.
+              </p>
+            )}
+
+            <div className="flex justify-between mt-4">
+              <button
+                type="button"
+                onClick={prevTab}
+                className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={nextTab}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case "projects":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Projects</h2>
+              <button
+                type="button"
+                onClick={addProject}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+              >
+                + Add Project
+              </button>
+            </div>
+
+            {projects.map((project, index) => (
+              <div key={index} className="mb-4 p-4 border rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold">Project #{index + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => removeProject(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Project Name
+                    </label>
+                    <input
+                      type="text"
+                      value={project.name}
+                      onChange={(e) =>
+                        updateProject(index, "name", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Project URL
+                    </label>
+                    <input
+                      type="url"
+                      value={project.url}
+                      onChange={(e) =>
+                        updateProject(index, "url", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={project.start_date}
+                      onChange={(e) =>
+                        updateProject(index, "start_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={project.end_date}
+                      onChange={(e) =>
+                        updateProject(index, "end_date", e.target.value)
+                      }
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={project.description}
+                    onChange={(e) =>
+                      updateProject(index, "description", e.target.value)
+                    }
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            ))}
+
+            {projects.length === 0 && (
+              <p className="text-gray-500 italic">
+                No projects added yet. Click the button above to add your
+                projects.
+              </p>
+            )}
+
+            <div className="flex justify-between mt-4">
+              <button
+                type="button"
+                onClick={prevTab}
+                className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={nextTab}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case "review":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4">Review & Submit</h2>
+
+            <div className="mb-6">
+              <h3 className="font-semibold text-lg mb-2">CV Summary</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p>
+                  <strong>Title:</strong> {title || "Not specified"}
+                </p>
+                <p>
+                  <strong>Template:</strong>{" "}
+                  {selectedTemplate.charAt(0).toUpperCase() +
+                    selectedTemplate.slice(1)}
+                </p>
+                <p>
+                  <strong>Visibility:</strong> {isPublic ? "Public" : "Private"}
+                </p>
+                <p>
+                  <strong>Sections completed:</strong>
+                </p>
+                <ul className="list-disc ml-6 mt-2">
+                  <li
+                    className={
+                      personalInfo.full_name ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    Personal Information {personalInfo.full_name ? "✓" : "✗"}
+                  </li>
+                  <li
+                    className={
+                      education.length > 0
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }
+                  >
+                    Education {education.length > 0 ? "✓" : "(Optional)"}
+                  </li>
+                  <li
+                    className={
+                      experience.length > 0
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }
+                  >
+                    Experience {experience.length > 0 ? "✓" : "(Optional)"}
+                  </li>
+                  <li
+                    className={
+                      skills.length > 0 ? "text-green-600" : "text-yellow-600"
+                    }
+                  >
+                    Skills {skills.length > 0 ? "✓" : "(Optional)"}
+                  </li>
+                  <li
+                    className={
+                      projects.length > 0 ? "text-green-600" : "text-yellow-600"
+                    }
+                  >
+                    Projects {projects.length > 0 ? "✓" : "(Optional)"}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-4">
+              <button
+                type="button"
+                onClick={prevTab}
+                className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                {loading ? "Creating..." : "Create CV"}{" "}
+                <Save className="ml-2 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          CV created successfully! Redirecting...
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Form Area - Left Side */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+            <h2 className="text-xl font-bold mb-2">Create Your CV</h2>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600">
+              {completionPercentage}% Complete
+            </p>
+          </div>
+
+          <div className="flex mb-4 border-b">
+            <button
+              onClick={() => setActiveTab("basic")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "basic"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <User className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Basic</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("education")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "education"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Book className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Education</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("experience")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "experience"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Briefcase className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Experience</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("skills")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "skills"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Wrench className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Skills</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("projects")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "projects"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <FileText className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Projects</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("review")}
+              className={`px-4 py-2 font-medium ${
+                activeTab === "review"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Eye className="inline-block mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Review</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>{renderTabContent()}</form>
         </div>
 
-        {/* Preview Column */}
-        <div className="hidden lg:block sticky top-4 h-[calc(100vh-2rem)]">
-          <h2 className="text-xl font-bold mb-4">Preview</h2>
-          <CVPreview formData={previewData} template={selectedTemplate} />
+        {/* Preview Area - Right Side */}
+        <div className="lg:col-span-1">
+          <CompactCVPreview
+            formData={previewData}
+            template={selectedTemplate}
+          />
         </div>
       </div>
     </div>

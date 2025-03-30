@@ -39,9 +39,7 @@ const CreateCV = () => {
         </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <CVForm onSubmitSuccess={handleCVCreated} />
-      </div>
+      <CVForm onSubmitSuccess={handleCVCreated} />
     </div>
   );
 };
