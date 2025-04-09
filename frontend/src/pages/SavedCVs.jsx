@@ -12,6 +12,16 @@ import {
 import { FileText, Trash2, Eye, EyeOff, Printer } from "lucide-react";
 import ProfessionalTemplate from "../components/cv-builder/cv-templates/ProfessionalTemplate";
 import ModernTemplate from "../components/cv-builder/cv-templates/ModernTemplate";
+import AcademicTemplate from "../components/cv-builder/cv-templates/AcademicTemplate";
+import ChronologicalTemplate from "../components/cv-builder/cv-templates/ChronologicalTemplate";
+import CompactTemplate from "../components/cv-builder/cv-templates/CompactTemplate";
+import CreativeTemplate from "../components/cv-builder/cv-templates/CreativeTemplate";
+import ElegantTemplate from "../components/cv-builder/cv-templates/ElegantTemplate";
+import ExecutiveTemplate from "../components/cv-builder/cv-templates/ExecutiveTemplate";
+import FunctionalTemplate from "../components/cv-builder/cv-templates/FunctionalTemplate";
+import InfographicTemplate from "../components/cv-builder/cv-templates/InfographicTemplate";
+import MinimalistTemplate from "../components/cv-builder/cv-templates/MinimalistTemplate";
+import TechnicalTemplate from "../components/cv-builder/cv-templates/TechnicalTemplate";
 
 const SavedCVs = () => {
   const [cvs, setCvs] = useState([]);
@@ -134,6 +144,26 @@ const SavedCVs = () => {
         return <ProfessionalTemplate {...selectedCV.parsedData} />;
       case "modern":
         return <ModernTemplate {...selectedCV.parsedData} />;
+      case "academic":
+        return <AcademicTemplate {...selectedCV.parsedData} />;
+      case "chronological":
+        return <ChronologicalTemplate {...selectedCV.parsedData} />;
+      case "compact":
+        return <CompactTemplate {...selectedCV.parsedData} />;
+      case "creative":
+        return <CreativeTemplate {...selectedCV.parsedData} />;
+      case "elegant":
+        return <ElegantTemplate {...selectedCV.parsedData} />;
+      case "executive":
+        return <ExecutiveTemplate {...selectedCV.parsedData} />;
+      case "functional":
+        return <FunctionalTemplate {...selectedCV.parsedData} />;
+      case "infographic":
+        return <InfographicTemplate {...selectedCV.parsedData} />;
+      case "minimalist":
+        return <MinimalistTemplate {...selectedCV.parsedData} />;
+      case "technical":
+        return <TechnicalTemplate {...selectedCV.parsedData} />;
       default:
         return <ProfessionalTemplate {...selectedCV.parsedData} />;
     }

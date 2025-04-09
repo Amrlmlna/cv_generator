@@ -3,6 +3,16 @@
 import { useEffect } from "react";
 import ProfessionalTemplate from "./cv-templates/ProfessionalTemplate";
 import ModernTemplate from "./cv-templates/ModernTemplate";
+import MinimalistTemplate from "./cv-templates/MinimalistTemplate";
+import AcademicTemplate from "./cv-templates/AcademicTemplate";
+import ChronologicalTemplate from "./cv-templates/ChronologicalTemplate";
+import CompactTemplate from "./cv-templates/CompactTemplate";
+import CreativeTemplate from "./cv-templates/CreativeTemplate";
+import ElegantTemplate from "./cv-templates/ElegantTemplate";
+import ExecutiveTemplate from "./cv-templates/ExecutiveTemplate";
+import FunctionalTemplate from "./cv-templates/FunctionalTemplate";
+import InfographicTemplate from "./cv-templates/InfographicTemplate";
+import TechnicalTemplate from "./cv-templates/TechnicalTemplate";
 
 const PrintableCV = ({ cvData, onAfterPrint }) => {
   useEffect(() => {
@@ -46,10 +56,27 @@ const PrintableCV = ({ cvData, onAfterPrint }) => {
       case "modern":
         return <ModernTemplate data={cvData} />;
       case "minimalist":
-        // Default to professional if minimalist not implemented yet
-        return <ProfessionalTemplate data={cvData} />;
+        return <MinimalistTemplate data={cvData} />;
+      case "academic":
+        return <AcademicTemplate data={cvData} />;
+      case "chronological":
+        return <ChronologicalTemplate data={cvData} />;
+      case "compact":
+        return <CompactTemplate data={cvData} />;
+      case "creative":
+        return <CreativeTemplate data={cvData} />;
+      case "elegant":
+        return <ElegantTemplate data={cvData} />;
+      case "executive":
+        return <ExecutiveTemplate data={cvData} />;
+      case "functional":
+        return <FunctionalTemplate data={cvData} />;
+      case "infographic":
+        return <InfographicTemplate data={cvData} />;
+      case "technical":
+        return <TechnicalTemplate data={cvData} />;
       default:
-        return <ProfessionalTemplate data={cvData} />;
+        return <ProfessionalTemplate showPlaceholders={showPlaceholders} />;
     }
   };
 

@@ -224,7 +224,7 @@ const CVPreview = () => {
           <div
             className="w-[21cm] origin-top"
             style={{
-              transform: "scale(0.45)",
+              transform: "scale(0.30)",
               height: "29.7cm", // A4 height
               transformOrigin: "top center",
               marginTop: "600px", // Add margin to prevent top from being cut off
