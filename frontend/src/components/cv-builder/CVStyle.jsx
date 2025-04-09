@@ -1,8 +1,8 @@
-"use client"
-import useCV from "../../store/cvStore"
+"use client";
+import useCV from "../../store/cvStore";
 
 const CVStyle = () => {
-  const { templateId, setTemplate, colorScheme, setColorScheme } = useCV()
+  const { templateId, setTemplate, colorScheme, setColorScheme } = useCV();
 
   const templates = [
     {
@@ -20,7 +20,52 @@ const CVStyle = () => {
       name: "Minimalist",
       description: "Simple and elegant design with minimal elements",
     },
-  ]
+    {
+      id: "creative",
+      name: "Creative",
+      description: "Artistic design for creative professionals",
+    },
+    {
+      id: "executive",
+      name: "Executive",
+      description: "Formal design for executives and senior professionals",
+    },
+    {
+      id: "compact",
+      name: "Compact",
+      description: "Fits more information in less space",
+    },
+    {
+      id: "elegant",
+      name: "Elegant",
+      description: "Sophisticated design with elegant typography",
+    },
+    {
+      id: "technical",
+      name: "Technical",
+      description: "Design focused on technical skills and coding",
+    },
+    {
+      id: "academic",
+      name: "Academic",
+      description: "Design for academic and research CVs",
+    },
+    {
+      id: "chronological",
+      name: "Chronological",
+      description: "Timeline-based design emphasizing career progression",
+    },
+    {
+      id: "functional",
+      name: "Functional",
+      description: "Skills-focused design for highlighting competencies",
+    },
+    {
+      id: "infographic",
+      name: "Infographic",
+      description: "Visual design with graphic elements and data visualization",
+    },
+  ];
 
   const colorSchemes = [
     {
@@ -43,7 +88,17 @@ const CVStyle = () => {
       name: "Gray",
       class: "bg-gray-700",
     },
-  ]
+  ];
+
+  // Update template immediately when selected
+  const handleTemplateChange = (templateId) => {
+    setTemplate(templateId);
+  };
+
+  // Update color scheme immediately when selected
+  const handleColorChange = (colorId) => {
+    setColorScheme(colorId);
+  };
 
   return (
     <div className="space-y-8">
@@ -59,14 +114,20 @@ const CVStyle = () => {
                   ? "border-primary-600 ring-2 ring-primary-200"
                   : "border-secondary-200 hover:border-secondary-300"
               }`}
-              onClick={() => setTemplate(template.id)}
+              onClick={() => handleTemplateChange(template.id)}
             >
               <div className="h-36 bg-secondary-100 border-b border-secondary-200 flex items-center justify-center">
-                <span className="text-secondary-400 font-medium">{template.name} Preview</span>
+                <span className="text-secondary-400 font-medium">
+                  {template.name} Preview
+                </span>
               </div>
               <div className="p-4">
-                <h3 className="font-medium text-secondary-900">{template.name}</h3>
-                <p className="text-sm text-secondary-600 mt-1">{template.description}</p>
+                <h3 className="font-medium text-secondary-900">
+                  {template.name}
+                </h3>
+                <p className="text-sm text-secondary-600 mt-1">
+                  {template.description}
+                </p>
               </div>
             </div>
           ))}
@@ -83,9 +144,12 @@ const CVStyle = () => {
               className={`relative cursor-pointer transition-transform ${
                 colorScheme === scheme.id ? "scale-110" : "hover:scale-105"
               }`}
-              onClick={() => setColorScheme(scheme.id)}
+              onClick={() => handleColorChange(scheme.id)}
             >
-              <div className={`w-12 h-12 rounded-full ${scheme.class} shadow-md`} title={scheme.name}></div>
+              <div
+                className={`w-12 h-12 rounded-full ${scheme.class} shadow-md`}
+                title={scheme.name}
+              ></div>
               {colorScheme === scheme.id && (
                 <div className="absolute inset-0 border-2 border-white rounded-full shadow-lg"></div>
               )}
@@ -97,8 +161,7 @@ const CVStyle = () => {
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CVStyle
-
+export default CVStyle;

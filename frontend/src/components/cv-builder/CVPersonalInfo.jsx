@@ -1,32 +1,33 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import useCV from "../../store/cvStore"
+import { useState, useEffect } from "react";
+import useCV from "../../store/cvStore";
 
 const CVPersonalInfo = () => {
-  const { personalInfo, setPersonalInfo } = useCV()
-  const [formData, setFormData] = useState(personalInfo)
+  const { personalInfo, setPersonalInfo } = useCV();
+  const [formData, setFormData] = useState(personalInfo);
 
   // Update form data when personal info changes
   useEffect(() => {
-    setFormData(personalInfo)
-  }, [personalInfo])
+    setFormData(personalInfo);
+  }, [personalInfo]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
+    const { name, value } = e.target;
+    const updatedData = {
+      ...formData,
       [name]: value,
-    }))
-  }
+    };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setPersonalInfo(formData)
-  }
+    // Update local state
+    setFormData(updatedData);
+
+    // Update store immediately - this is the key change for real-time updates
+    setPersonalInfo(updatedData);
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="fullName" className="form-label">
@@ -39,7 +40,7 @@ const CVPersonalInfo = () => {
             className="input"
             value={formData.fullName}
             onChange={handleChange}
-            required
+            placeholder="John Doe"
           />
         </div>
 
@@ -71,7 +72,7 @@ const CVPersonalInfo = () => {
             className="input"
             value={formData.email}
             onChange={handleChange}
-            required
+            placeholder="your.email@example.com"
           />
         </div>
 
@@ -79,7 +80,15 @@ const CVPersonalInfo = () => {
           <label htmlFor="phone" className="form-label">
             Phone
           </label>
-          <input id="phone" name="phone" type="tel" className="input" value={formData.phone} onChange={handleChange} />
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            className="input"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="+1 (555) 123-4567"
+          />
         </div>
       </div>
 
@@ -112,15 +121,8 @@ const CVPersonalInfo = () => {
           placeholder="Brief summary of your professional background and goals"
         ></textarea>
       </div>
+    </div>
+  );
+};
 
-      <div className="flex justify-end">
-        <button type="submit" className="btn btn-primary">
-          Save
-        </button>
-      </div>
-    </form>
-  )
-}
-
-export default CVPersonalInfo
-
+export default CVPersonalInfo;

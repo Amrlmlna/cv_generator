@@ -1,171 +1,162 @@
-import useCV from "../../../store/cvStore"
+import useCV from "../../../store/cvStore";
+import { getDisplayData } from "../../../utils/cv-template-helpers";
 
-const ProfessionalTemplate = () => {
-  const { personalInfo, education, experience, skills, languages, certificates, colorScheme } = useCV()
+const ProfessionalTemplate = ({ showPlaceholders = true }) => {
+  const cvData = useCV();
 
-  // Color scheme classes
+  // Get data with placeholders if needed
+  const personalInfo = getDisplayData(cvData, "personalInfo", showPlaceholders);
+  const education = getDisplayData(cvData, "education", showPlaceholders);
+  const experience = getDisplayData(cvData, "experience", showPlaceholders);
+  const skills = getDisplayData(cvData, "skills", showPlaceholders);
+  const languages = getDisplayData(cvData, "languages", showPlaceholders);
+  const certificates = getDisplayData(cvData, "certificates", showPlaceholders);
+  const colorScheme = cvData.colorScheme || "blue";
+
+  // Map color scheme to actual color classes
   const colorClasses = {
-    blue: {
-      primary: "bg-primary-600",
-      text: "text-primary-700",
-      light: "bg-primary-50",
-      border: "border-primary-200",
-    },
-    green: {
-      primary: "bg-emerald-600",
-      text: "text-emerald-700",
-      light: "bg-emerald-50",
-      border: "border-emerald-200",
-    },
-    purple: {
-      primary: "bg-violet-600",
-      text: "text-violet-700",
-      light: "bg-violet-50",
-      border: "border-violet-200",
-    },
-    gray: {
-      primary: "bg-gray-700",
-      text: "text-gray-700",
-      light: "bg-gray-50",
-      border: "border-gray-200",
-    },
-  }
+    blue: "bg-primary-600 text-white",
+    green: "bg-emerald-600 text-white",
+    purple: "bg-violet-600 text-white",
+    gray: "bg-gray-700 text-white",
+  };
 
-  const colors = colorClasses[colorScheme] || colorClasses.blue
+  const headerColor = colorClasses[colorScheme] || colorClasses.blue;
 
   return (
-    <div className="bg-white shadow-lg w-full h-full">
+    <div className="w-full h-full bg-white shadow-lg">
       {/* Header */}
-      <div className={`${colors.primary} text-white p-8`}>
-        <h1 className="text-2xl font-bold">{personalInfo.fullName || "Your Name"}</h1>
-        <p className="text-lg mt-1">{personalInfo.title || "Professional Title"}</p>
-
-        {/* Contact Info */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
-          {personalInfo.email && <div>Email: {personalInfo.email}</div>}
-          {personalInfo.phone && <div>Phone: {personalInfo.phone}</div>}
-          {personalInfo.location && <div>Location: {personalInfo.location}</div>}
-        </div>
+      <div className={`${headerColor} px-8 py-6`}>
+        <h1 className="text-3xl font-bold">{personalInfo.fullName}</h1>
+        <p className="text-xl mt-1">{personalInfo.title}</p>
       </div>
 
-      <div className="flex flex-col md:flex-row">
-        {/* Main Column */}
-        <div className="w-full md:w-2/3 p-6 space-y-6">
-          {/* Professional Summary */}
-          {personalInfo.summary && (
-            <div>
-              <h2 className={`text-lg font-bold pb-1 mb-2 border-b-2 ${colors.border} ${colors.text}`}>
-                Professional Summary
-              </h2>
-              <p>{personalInfo.summary}</p>
+      <div className="grid grid-cols-3 gap-6 p-8">
+        {/* Left Column */}
+        <div className="col-span-1 space-y-6">
+          {/* Contact Information */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">
+              Contact
+            </h2>
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>Email:</strong> {personalInfo.email}
+              </p>
+              <p>
+                <strong>Phone:</strong> {personalInfo.phone}
+              </p>
+              <p>
+                <strong>Location:</strong> {personalInfo.location}
+              </p>
             </div>
-          )}
+          </div>
 
-          {/* Experience */}
-          {experience.length > 0 && (
-            <div>
-              <h2 className={`text-lg font-bold pb-1 mb-4 border-b-2 ${colors.border} ${colors.text}`}>
-                Work Experience
-              </h2>
-              <div className="space-y-4">
-                {experience.map((exp, index) => (
-                  <div key={index}>
-                    <h3 className="font-bold">{exp.position}</h3>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{exp.company}</span>
-                      <span>
-                        {exp.startDate} - {exp.endDate || "Present"}
-                      </span>
-                    </div>
-                    {exp.location && <div className="text-sm mb-2">{exp.location}</div>}
-                    {exp.description && <p className="text-sm">{exp.description}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Skills */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">Skills</h2>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              {skills.map((skill, index) => (
+                <li key={index}>{skill}</li>
+              ))}
+            </ul>
+          </div>
 
-          {/* Education */}
-          {education.length > 0 && (
-            <div>
-              <h2 className={`text-lg font-bold pb-1 mb-4 border-b-2 ${colors.border} ${colors.text}`}>Education</h2>
-              <div className="space-y-4">
-                {education.map((edu, index) => (
-                  <div key={index}>
-                    <h3 className="font-bold">
-                      {edu.degree}
-                      {edu.field ? `, ${edu.field}` : ""}
-                    </h3>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{edu.institution}</span>
-                      <span>
-                        {edu.startDate} - {edu.endDate || "Present"}
-                      </span>
-                    </div>
-                    {edu.description && <p className="text-sm">{edu.description}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Languages */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">
+              Languages
+            </h2>
+            <ul className="space-y-1 text-sm">
+              {languages.map((lang, index) => (
+                <li key={index}>
+                  <span className="font-medium">{lang.language}</span> -{" "}
+                  {lang.proficiency}
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {/* Certificates */}
           {certificates.length > 0 && (
             <div>
-              <h2 className={`text-lg font-bold pb-1 mb-4 border-b-2 ${colors.border} ${colors.text}`}>
+              <h2 className="text-lg font-semibold border-b pb-2 mb-3">
                 Certifications
               </h2>
-              <div className="space-y-2">
+              <ul className="space-y-2 text-sm">
                 {certificates.map((cert, index) => (
-                  <div key={index}>
-                    <h3 className="font-medium">{cert.name}</h3>
-                    <div className="text-sm">
-                      {cert.issuer}
-                      {cert.date && ` • ${cert.date}`}
-                    </div>
-                  </div>
+                  <li key={index}>
+                    <div className="font-medium">{cert.name}</div>
+                    <div>{cert.issuer}</div>
+                    <div className="text-xs text-gray-600">{cert.date}</div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className={`w-full md:w-1/3 p-6 ${colors.light}`}>
-          {/* Skills */}
-          {skills.length > 0 && (
-            <div className="mb-6">
-              <h2 className={`text-lg font-bold pb-1 mb-3 border-b-2 ${colors.border} ${colors.text}`}>Skills</h2>
-              <ul className="space-y-1">
-                {skills.map((skill, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${colors.primary}`}></span>
-                    <span>{skill}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+        {/* Right Column */}
+        <div className="col-span-2 space-y-6">
+          {/* Summary */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">
+              Professional Summary
+            </h2>
+            <p className="text-sm">{personalInfo.summary}</p>
+          </div>
 
-          {/* Languages */}
-          {languages.length > 0 && (
-            <div>
-              <h2 className={`text-lg font-bold pb-1 mb-3 border-b-2 ${colors.border} ${colors.text}`}>Languages</h2>
-              <ul className="space-y-1">
-                {languages.map((lang, index) => (
-                  <li key={index}>
-                    <span className="font-medium">{lang.language}</span>
-                    <span className="text-sm text-secondary-500"> - {lang.proficiency}</span>
-                  </li>
-                ))}
-              </ul>
+          {/* Experience */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">
+              Work Experience
+            </h2>
+            <div className="space-y-4">
+              {experience.map((exp, index) => (
+                <div key={index}>
+                  <h3 className="font-medium">{exp.position}</h3>
+                  <div className="text-sm flex justify-between">
+                    <span>
+                      {exp.company}, {exp.location}
+                    </span>
+                    <span className="text-gray-600">
+                      {exp.startDate} - {exp.endDate || "Present"}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1">{exp.description}</p>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Education */}
+          <div>
+            <h2 className="text-lg font-semibold border-b pb-2 mb-3">
+              Education
+            </h2>
+            <div className="space-y-4">
+              {education.map((edu, index) => (
+                <div key={index}>
+                  <h3 className="font-medium">
+                    {edu.degree} {edu.field && `in ${edu.field}`}
+                  </h3>
+                  <div className="text-sm flex justify-between">
+                    <span>{edu.institution}</span>
+                    <span className="text-gray-600">
+                      {edu.startDate} - {edu.endDate || "Present"}
+                    </span>
+                  </div>
+                  {edu.description && (
+                    <p className="text-sm mt-1">{edu.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProfessionalTemplate
-
+export default ProfessionalTemplate;

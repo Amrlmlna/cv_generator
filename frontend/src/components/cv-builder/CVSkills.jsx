@@ -1,39 +1,39 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { X } from "lucide-react"
-import useCV from "../../store/cvStore"
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import useCV from "../../store/cvStore";
 
 const CVSkills = () => {
-  const { skills, setSkills } = useCV()
-  const [inputValue, setInputValue] = useState("")
-  const [skillList, setSkillList] = useState(skills)
+  const { skills, setSkills } = useCV();
+  const [inputValue, setInputValue] = useState("");
+  const [skillList, setSkillList] = useState(skills);
 
   useEffect(() => {
-    setSkillList(skills)
-  }, [skills])
+    setSkillList(skills);
+  }, [skills]);
 
   const handleAddSkill = () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim()) return;
 
-    const newSkills = [...skillList, inputValue.trim()]
-    setSkillList(newSkills)
-    setSkills(newSkills)
-    setInputValue("")
-  }
+    const newSkills = [...skillList, inputValue.trim()];
+    setSkillList(newSkills);
+    setSkills(newSkills);
+    setInputValue("");
+  };
 
   const handleRemoveSkill = (index) => {
-    const newSkills = skillList.filter((_, i) => i !== index)
-    setSkillList(newSkills)
-    setSkills(newSkills)
-  }
+    const newSkills = skillList.filter((_, i) => i !== index);
+    setSkillList(newSkills);
+    setSkills(newSkills);
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault()
-      handleAddSkill()
+      e.preventDefault();
+      handleAddSkill();
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -51,7 +51,11 @@ const CVSkills = () => {
             onKeyDown={handleKeyDown}
             placeholder="Add skills (e.g., JavaScript, Project Management)"
           />
-          <button type="button" onClick={handleAddSkill} className="btn btn-primary whitespace-nowrap">
+          <button
+            type="button"
+            onClick={handleAddSkill}
+            className="btn btn-primary whitespace-nowrap"
+          >
             Add Skill
           </button>
         </div>
@@ -78,11 +82,11 @@ const CVSkills = () => {
       )}
 
       <p className="text-sm text-secondary-600 mt-2">
-        Add your relevant technical and soft skills. These will help employers quickly identify your qualifications.
+        Add your relevant technical and soft skills. These will help employers
+        quickly identify your qualifications.
       </p>
     </div>
-  )
-}
+  );
+};
 
-export default CVSkills
-
+export default CVSkills;

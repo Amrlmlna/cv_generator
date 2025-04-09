@@ -1,42 +1,49 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Plus, Trash2 } from "lucide-react"
-import useCV from "../../store/cvStore"
+import { useState, useEffect } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import useCV from "../../store/cvStore";
 
 const CVLanguages = () => {
-  const { languages, setLanguages } = useCV()
-  const [languageList, setLanguageList] = useState(languages)
-  const [language, setLanguage] = useState("")
-  const [proficiency, setProficiency] = useState("Intermediate")
+  const { languages, setLanguages } = useCV();
+  const [languageList, setLanguageList] = useState(languages);
+  const [language, setLanguage] = useState("");
+  const [proficiency, setProficiency] = useState("Intermediate");
 
   useEffect(() => {
-    setLanguageList(languages)
-  }, [languages])
+    setLanguageList(languages);
+  }, [languages]);
 
-  const proficiencyLevels = ["Beginner", "Elementary", "Intermediate", "Advanced", "Fluent", "Native"]
+  const proficiencyLevels = [
+    "Beginner",
+    "Elementary",
+    "Intermediate",
+    "Advanced",
+    "Fluent",
+    "Native",
+  ];
 
   const handleAddLanguage = () => {
-    if (!language.trim()) return
+    if (!language.trim()) return;
 
     const newLanguage = {
       language: language.trim(),
       proficiency,
-    }
+    };
 
-    const newLanguages = [...languageList, newLanguage]
-    setLanguageList(newLanguages)
-    setLanguages(newLanguages)
+    const newLanguages = [...languageList, newLanguage];
+    setLanguageList(newLanguages);
+    setLanguages(newLanguages);
 
-    setLanguage("")
-    setProficiency("Intermediate")
-  }
+    setLanguage("");
+    setProficiency("Intermediate");
+  };
 
   const handleRemoveLanguage = (index) => {
-    const newLanguages = languageList.filter((_, i) => i !== index)
-    setLanguageList(newLanguages)
-    setLanguages(newLanguages)
-  }
+    const newLanguages = languageList.filter((_, i) => i !== index);
+    setLanguageList(newLanguages);
+    setLanguages(newLanguages);
+  };
 
   return (
     <div className="space-y-6">
@@ -50,7 +57,9 @@ const CVLanguages = () => {
             >
               <div>
                 <span className="font-medium">{item.language}</span>
-                <span className="text-secondary-600 text-sm ml-2">({item.proficiency})</span>
+                <span className="text-secondary-600 text-sm ml-2">
+                  ({item.proficiency})
+                </span>
               </div>
               <button
                 type="button"
@@ -110,8 +119,7 @@ const CVLanguages = () => {
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CVLanguages
-
+export default CVLanguages;

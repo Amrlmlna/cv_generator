@@ -1,61 +1,61 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Plus, Pencil, Trash2 } from "lucide-react"
-import useCV from "../../store/cvStore"
+import { useState, useEffect } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import useCV from "../../store/cvStore";
 
 const CVCertificates = () => {
-  const { certificates, setCertificates } = useCV()
-  const [editing, setEditing] = useState(false)
-  const [currentIndex, setCurrentIndex] = useState(null)
-  const [certificateList, setCertificateList] = useState(certificates)
+  const { certificates, setCertificates } = useCV();
+  const [editing, setEditing] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(null);
+  const [certificateList, setCertificateList] = useState(certificates);
   const [formData, setFormData] = useState({
     name: "",
     issuer: "",
     date: "",
     url: "",
-  })
+  });
 
   useEffect(() => {
-    setCertificateList(certificates)
-  }, [certificates])
+    setCertificateList(certificates);
+  }, [certificates]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (editing && currentIndex !== null) {
-      const newCertificates = [...certificateList]
-      newCertificates[currentIndex] = formData
-      setCertificateList(newCertificates)
-      setCertificates(newCertificates)
+      const newCertificates = [...certificateList];
+      newCertificates[currentIndex] = formData;
+      setCertificateList(newCertificates);
+      setCertificates(newCertificates);
     } else {
-      const newCertificates = [...certificateList, formData]
-      setCertificateList(newCertificates)
-      setCertificates(newCertificates)
+      const newCertificates = [...certificateList, formData];
+      setCertificateList(newCertificates);
+      setCertificates(newCertificates);
     }
 
-    resetForm()
-  }
+    resetForm();
+  };
 
   const handleEdit = (index) => {
-    setEditing(true)
-    setCurrentIndex(index)
-    setFormData(certificateList[index])
-  }
+    setEditing(true);
+    setCurrentIndex(index);
+    setFormData(certificateList[index]);
+  };
 
   const handleDelete = (index) => {
-    const newCertificates = certificateList.filter((_, i) => i !== index)
-    setCertificateList(newCertificates)
-    setCertificates(newCertificates)
-  }
+    const newCertificates = certificateList.filter((_, i) => i !== index);
+    setCertificateList(newCertificates);
+    setCertificates(newCertificates);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -63,10 +63,10 @@ const CVCertificates = () => {
       issuer: "",
       date: "",
       url: "",
-    })
-    setEditing(false)
-    setCurrentIndex(null)
-  }
+    });
+    setEditing(false);
+    setCurrentIndex(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -74,12 +74,21 @@ const CVCertificates = () => {
       {certificateList.length > 0 && (
         <div className="space-y-4">
           {certificateList.map((item, index) => (
-            <div key={index} className="bg-secondary-50 p-4 rounded-md border border-secondary-200">
+            <div
+              key={index}
+              className="bg-secondary-50 p-4 rounded-md border border-secondary-200"
+            >
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-secondary-900">{item.name}</h3>
+                  <h3 className="font-semibold text-secondary-900">
+                    {item.name}
+                  </h3>
                   <p className="text-sm text-secondary-700">{item.issuer}</p>
-                  {item.date && <p className="text-xs text-secondary-600 mt-1">{item.date}</p>}
+                  {item.date && (
+                    <p className="text-xs text-secondary-600 mt-1">
+                      {item.date}
+                    </p>
+                  )}
                   {item.url && (
                     <a
                       href={item.url}
@@ -154,7 +163,14 @@ const CVCertificates = () => {
             <label htmlFor="date" className="form-label">
               Issue Date
             </label>
-            <input id="date" name="date" type="month" className="input" value={formData.date} onChange={handleChange} />
+            <input
+              id="date"
+              name="date"
+              type="month"
+              className="input"
+              value={formData.date}
+              onChange={handleChange}
+            />
           </div>
 
           <div>
@@ -175,7 +191,11 @@ const CVCertificates = () => {
 
         <div className="flex justify-end gap-2">
           {editing && (
-            <button type="button" onClick={resetForm} className="btn btn-secondary">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="btn btn-secondary"
+            >
               Cancel
             </button>
           )}
@@ -198,8 +218,7 @@ const CVCertificates = () => {
         </button>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CVCertificates
-
+export default CVCertificates;

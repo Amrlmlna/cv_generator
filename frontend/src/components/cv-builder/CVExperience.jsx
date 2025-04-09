@@ -1,13 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus, Pencil, Trash2 } from "lucide-react"
-import useCV from "../../store/cvStore"
+import { useState } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import useCV from "../../store/cvStore";
 
 const CVExperience = () => {
-  const { experience, addExperience, updateExperience, removeExperience } = useCV()
-  const [editing, setEditing] = useState(false)
-  const [currentIndex, setCurrentIndex] = useState(null)
+  const { experience, addExperience, updateExperience, removeExperience } =
+    useCV();
+  const [editing, setEditing] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(null);
   const [formData, setFormData] = useState({
     company: "",
     position: "",
@@ -15,37 +16,37 @@ const CVExperience = () => {
     startDate: "",
     endDate: "",
     description: "",
-  })
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (editing && currentIndex !== null) {
-      updateExperience(currentIndex, formData)
+      updateExperience(currentIndex, formData);
     } else {
-      addExperience(formData)
+      addExperience(formData);
     }
 
-    resetForm()
-  }
+    resetForm();
+  };
 
   const handleEdit = (index) => {
-    setEditing(true)
-    setCurrentIndex(index)
-    setFormData(experience[index])
-  }
+    setEditing(true);
+    setCurrentIndex(index);
+    setFormData(experience[index]);
+  };
 
   const handleDelete = (index) => {
-    removeExperience(index)
-  }
+    removeExperience(index);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -55,10 +56,10 @@ const CVExperience = () => {
       startDate: "",
       endDate: "",
       description: "",
-    })
-    setEditing(false)
-    setCurrentIndex(null)
-  }
+    });
+    setEditing(false);
+    setCurrentIndex(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -66,10 +67,15 @@ const CVExperience = () => {
       {experience.length > 0 && (
         <div className="space-y-4">
           {experience.map((item, index) => (
-            <div key={index} className="bg-secondary-50 p-4 rounded-md border border-secondary-200">
+            <div
+              key={index}
+              className="bg-secondary-50 p-4 rounded-md border border-secondary-200"
+            >
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-secondary-900">{item.position}</h3>
+                  <h3 className="font-semibold text-secondary-900">
+                    {item.position}
+                  </h3>
                   <p className="text-sm text-secondary-700">
                     {item.company}
                     {item.location ? `, ${item.location}` : ""}
@@ -77,7 +83,9 @@ const CVExperience = () => {
                   <p className="text-xs text-secondary-600 mt-1">
                     {item.startDate} - {item.endDate || "Present"}
                   </p>
-                  {item.description && <p className="text-sm mt-2">{item.description}</p>}
+                  {item.description && (
+                    <p className="text-sm mt-2">{item.description}</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -116,6 +124,7 @@ const CVExperience = () => {
               value={formData.company}
               onChange={handleChange}
               required
+              placeholder="Company Name"
             />
           </div>
 
@@ -131,6 +140,7 @@ const CVExperience = () => {
               value={formData.position}
               onChange={handleChange}
               required
+              placeholder="Your Job Title"
             />
           </div>
         </div>
@@ -201,7 +211,11 @@ const CVExperience = () => {
 
         <div className="flex justify-end gap-2">
           {editing && (
-            <button type="button" onClick={resetForm} className="btn btn-secondary">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="btn btn-secondary"
+            >
               Cancel
             </button>
           )}
@@ -224,8 +238,7 @@ const CVExperience = () => {
         </button>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CVExperience
-
+export default CVExperience;

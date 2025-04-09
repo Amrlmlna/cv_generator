@@ -1,202 +1,209 @@
-import useCV from "../../../store/cvStore"
+import useCV from "../../../store/cvStore";
+import { getDisplayData } from "../../../utils/cv-template-helpers";
 
-const ModernTemplate = () => {
-  const { personalInfo, education, experience, skills, languages, certificates, colorScheme } = useCV()
+const ModernTemplate = ({ showPlaceholders = true }) => {
+  const cvData = useCV();
 
-  // Color scheme classes
+  // Get data with placeholders if needed
+  const personalInfo = getDisplayData(cvData, "personalInfo", showPlaceholders);
+  const education = getDisplayData(cvData, "education", showPlaceholders);
+  const experience = getDisplayData(cvData, "experience", showPlaceholders);
+  const skills = getDisplayData(cvData, "skills", showPlaceholders);
+  const languages = getDisplayData(cvData, "languages", showPlaceholders);
+  const certificates = getDisplayData(cvData, "certificates", showPlaceholders);
+  const colorScheme = cvData.colorScheme || "blue";
+
+  // Map color scheme to actual color classes
   const colorClasses = {
-    blue: {
-      primary: "bg-primary-600",
-      text: "text-primary-700",
-      light: "bg-primary-50",
-      border: "border-primary-200",
-    },
-    green: {
-      primary: "bg-emerald-600",
-      text: "text-emerald-700",
-      light: "bg-emerald-50",
-      border: "border-emerald-200",
-    },
-    purple: {
-      primary: "bg-violet-600",
-      text: "text-violet-700",
-      light: "bg-violet-50",
-      border: "border-violet-200",
-    },
-    gray: {
-      primary: "bg-gray-700",
-      text: "text-gray-700",
-      light: "bg-gray-50",
-      border: "border-gray-200",
-    },
-  }
+    blue: "text-primary-600 border-primary-600",
+    green: "text-emerald-600 border-emerald-600",
+    purple: "text-violet-600 border-violet-600",
+    gray: "text-gray-700 border-gray-700",
+  };
 
-  const colors = colorClasses[colorScheme] || colorClasses.blue
+  const accentColor = colorClasses[colorScheme] || colorClasses.blue;
 
   return (
-    <div className="bg-white shadow-lg w-full h-full">
+    <div className="w-full h-full bg-white shadow-lg p-8">
       {/* Header */}
-      <div className="p-8">
-        <h1 className="text-3xl font-bold">{personalInfo.fullName || "Your Name"}</h1>
-        <div className={`h-1 w-24 my-3 ${colors.primary}`}></div>
-        <p className="text-lg mt-1">{personalInfo.title || "Professional Title"}</p>
+      <div className="text-center mb-8">
+        <h1 className={`text-3xl font-bold ${accentColor.split(" ")[0]}`}>
+          {personalInfo.fullName}
+        </h1>
+        <p className="text-xl mt-1 text-gray-600">{personalInfo.title}</p>
 
-        {/* Contact Info */}
-        <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm">
-          {personalInfo.email && (
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${colors.primary}`}></div>
-              <span>{personalInfo.email}</span>
-            </div>
-          )}
-          {personalInfo.phone && (
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${colors.primary}`}></div>
-              <span>{personalInfo.phone}</span>
-            </div>
-          )}
-          {personalInfo.location && (
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${colors.primary}`}></div>
-              <span>{personalInfo.location}</span>
-            </div>
-          )}
+        <div className="flex justify-center gap-4 mt-3 text-sm text-gray-600">
+          <div>{personalInfo.email}</div>
+          <div>{personalInfo.phone}</div>
+          <div>{personalInfo.location}</div>
         </div>
       </div>
 
-      <div className="px-8 py-4">
-        {/* Professional Summary */}
-        {personalInfo.summary && (
-          <div className="mb-6">
-            <h2 className={`text-lg font-bold mb-3 ${colors.text} flex items-center`}>
-              <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-              About Me
+      {/* Summary */}
+      <div className="mb-6">
+        <h2
+          className={`text-lg font-semibold mb-3 pb-1 border-b ${
+            accentColor.split(" ")[1]
+          }`}
+        >
+          About Me
+        </h2>
+        <p className="text-sm">{personalInfo.summary}</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {/* Left Column (2/3) */}
+        <div className="col-span-2 space-y-6">
+          {/* Experience */}
+          <div>
+            <h2
+              className={`text-lg font-semibold mb-3 pb-1 border-b ${
+                accentColor.split(" ")[1]
+              }`}
+            >
+              Professional Experience
             </h2>
-            <p className="pl-6">{personalInfo.summary}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main Column */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Experience */}
-            {experience.length > 0 && (
-              <div>
-                <h2 className={`text-lg font-bold mb-4 ${colors.text} flex items-center`}>
-                  <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-                  Work Experience
-                </h2>
-                <div className="space-y-4 pl-6">
-                  {experience.map((exp, index) => (
-                    <div key={index} className="relative">
-                      <div className={`absolute left-0 top-0 w-1 h-full ${colors.primary} -ml-6`}></div>
-                      <h3 className="font-bold">{exp.position}</h3>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium">{exp.company}</span>
-                        <span>
-                          {exp.startDate} - {exp.endDate || "Present"}
-                        </span>
-                      </div>
-                      {exp.location && <div className="text-sm mb-2">{exp.location}</div>}
-                      {exp.description && <p className="text-sm">{exp.description}</p>}
-                    </div>
-                  ))}
+            <div className="space-y-4">
+              {experience.map((exp, index) => (
+                <div
+                  key={index}
+                  className="relative pl-6 before:absolute before:left-0 before:top-1.5 before:h-3 before:w-3 before:rounded-full before:border-2 before:border-current before:content-[''] before:bg-white"
+                >
+                  <div className="flex justify-between">
+                    <h3 className="font-medium">{exp.position}</h3>
+                    <span className="text-sm text-gray-600">
+                      {exp.startDate} - {exp.endDate || "Present"}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    {exp.company}, {exp.location}
+                  </div>
+                  <p className="text-sm mt-1">{exp.description}</p>
                 </div>
-              </div>
-            )}
-
-            {/* Education */}
-            {education.length > 0 && (
-              <div>
-                <h2 className={`text-lg font-bold mb-4 ${colors.text} flex items-center`}>
-                  <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-                  Education
-                </h2>
-                <div className="space-y-4 pl-6">
-                  {education.map((edu, index) => (
-                    <div key={index} className="relative">
-                      <div className={`absolute left-0 top-0 w-1 h-full ${colors.primary} -ml-6`}></div>
-                      <h3 className="font-bold">
-                        {edu.degree}
-                        {edu.field ? `, ${edu.field}` : ""}
-                      </h3>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium">{edu.institution}</span>
-                        <span>
-                          {edu.startDate} - {edu.endDate || "Present"}
-                        </span>
-                      </div>
-                      {edu.description && <p className="text-sm">{edu.description}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Skills */}
-            {skills.length > 0 && (
-              <div>
-                <h2 className={`text-lg font-bold mb-3 ${colors.text} flex items-center`}>
-                  <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-                  Skills
-                </h2>
-                <div className="flex flex-wrap gap-2 pl-6">
-                  {skills.map((skill, index) => (
-                    <div key={index} className={`px-3 py-1 rounded-full text-sm ${colors.light} ${colors.text}`}>
-                      {skill}
-                    </div>
-                  ))}
+          {/* Education */}
+          <div>
+            <h2
+              className={`text-lg font-semibold mb-3 pb-1 border-b ${
+                accentColor.split(" ")[1]
+              }`}
+            >
+              Education
+            </h2>
+            <div className="space-y-4">
+              {education.map((edu, index) => (
+                <div
+                  key={index}
+                  className="relative pl-6 before:absolute before:left-0 before:top-1.5 before:h-3 before:w-3 before:rounded-full before:border-2 before:border-current before:content-[''] before:bg-white"
+                >
+                  <div className="flex justify-between">
+                    <h3 className="font-medium">
+                      {edu.degree} {edu.field && `in ${edu.field}`}
+                    </h3>
+                    <span className="text-sm text-gray-600">
+                      {edu.startDate} - {edu.endDate || "Present"}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-700">{edu.institution}</div>
+                  {edu.description && (
+                    <p className="text-sm mt-1">{edu.description}</p>
+                  )}
                 </div>
-              </div>
-            )}
-
-            {/* Languages */}
-            {languages.length > 0 && (
-              <div>
-                <h2 className={`text-lg font-bold mb-3 ${colors.text} flex items-center`}>
-                  <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-                  Languages
-                </h2>
-                <ul className="space-y-1 pl-6">
-                  {languages.map((lang, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>{lang.language}</span>
-                      <span className="text-sm text-secondary-500">{lang.proficiency}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Certificates */}
-            {certificates.length > 0 && (
-              <div>
-                <h2 className={`text-lg font-bold mb-3 ${colors.text} flex items-center`}>
-                  <div className={`w-4 h-4 mr-2 ${colors.primary}`}></div>
-                  Certifications
-                </h2>
-                <div className="space-y-2 pl-6">
-                  {certificates.map((cert, index) => (
-                    <div key={index}>
-                      <h3 className="font-medium">{cert.name}</h3>
-                      <div className="text-sm">
-                        {cert.issuer}
-                        {cert.date && ` • ${cert.date}`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
+        </div>
+
+        {/* Right Column (1/3) */}
+        <div className="col-span-1 space-y-6">
+          {/* Skills */}
+          <div>
+            <h2
+              className={`text-lg font-semibold mb-3 pb-1 border-b ${
+                accentColor.split(" ")[1]
+              }`}
+            >
+              Skills
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill, index) => (
+                <span
+                  key={index}
+                  className={`px-3 py-1 text-sm rounded-full border ${accentColor}`}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Languages */}
+          <div>
+            <h2
+              className={`text-lg font-semibold mb-3 pb-1 border-b ${
+                accentColor.split(" ")[1]
+              }`}
+            >
+              Languages
+            </h2>
+            <ul className="space-y-2">
+              {languages.map((lang, index) => (
+                <li key={index} className="text-sm">
+                  <span className="font-medium">{lang.language}</span>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                    <div
+                      className={`h-1.5 rounded-full ${accentColor
+                        .split(" ")[0]
+                        .replace("text", "bg")}`}
+                      style={{
+                        width:
+                          lang.proficiency === "Native"
+                            ? "100%"
+                            : lang.proficiency === "Fluent"
+                            ? "90%"
+                            : lang.proficiency === "Advanced"
+                            ? "75%"
+                            : lang.proficiency === "Intermediate"
+                            ? "50%"
+                            : lang.proficiency === "Elementary"
+                            ? "30%"
+                            : "15%",
+                      }}
+                    ></div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Certificates */}
+          {certificates.length > 0 && (
+            <div>
+              <h2
+                className={`text-lg font-semibold mb-3 pb-1 border-b ${
+                  accentColor.split(" ")[1]
+                }`}
+              >
+                Certifications
+              </h2>
+              <ul className="space-y-2 text-sm">
+                {certificates.map((cert, index) => (
+                  <li key={index}>
+                    <div className="font-medium">{cert.name}</div>
+                    <div className="text-gray-700">{cert.issuer}</div>
+                    <div className="text-xs text-gray-600">{cert.date}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ModernTemplate
-
+export default ModernTemplate;

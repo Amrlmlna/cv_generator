@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import useCV from "../../store/cvStore";
 import ProfessionalTemplate from "./cv-templates/ProfessionalTemplate";
 import ModernTemplate from "./cv-templates/ModernTemplate";
-// Import the entire service instead of just the uploadCV function
+import MinimalistTemplate from "./cv-templates/MinimalistTemplate";
+import CreativeTemplate from "./cv-templates/CreativeTemplate";
+import ExecutiveTemplate from "./cv-templates/ExecutiveTemplate";
+import CompactTemplate from "./cv-templates/CompactTemplate";
+import ElegantTemplate from "./cv-templates/ElegantTemplate";
+import TechnicalTemplate from "./cv-templates/TechnicalTemplate";
+import AcademicTemplate from "./cv-templates/AcademicTemplate";
+import ChronologicalTemplate from "./cv-templates/ChronologicalTemplate";
+import FunctionalTemplate from "./cv-templates/FunctionalTemplate";
+import InfographicTemplate from "./cv-templates/InfographicTemplate";
 import cvService from "../../services/cvService";
-import { X, Maximize2 } from "lucide-react";
+import { X, Maximize2, Eye, EyeOff } from "lucide-react";
 
 const CVPreview = () => {
   const cvStore = useCV();
@@ -17,19 +26,54 @@ const CVPreview = () => {
   const [showTitleInput, setShowTitleInput] = useState(false);
   const [showFullSizeModal, setShowFullSizeModal] = useState(false);
   const [visibility, setVisibility] = useState("private");
+  const [showPlaceholders, setShowPlaceholders] = useState(true);
   const cvRef = useRef(null);
+
+  // Force re-render when CV data changes
+  const [, setForceUpdate] = useState(0);
+
+  // Subscribe to store changes to update preview in real-time
+  useEffect(() => {
+    // This will re-render the component whenever any CV data changes
+    const unsubscribe = cvStore.subscribe(() => {
+      setForceUpdate((prev) => prev + 1);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [cvStore]);
 
   const renderTemplate = () => {
     switch (templateId) {
       case "professional":
-        return <ProfessionalTemplate />;
+        return <ProfessionalTemplate showPlaceholders={showPlaceholders} />;
       case "modern":
-        return <ModernTemplate />;
+        return <ModernTemplate showPlaceholders={showPlaceholders} />;
       case "minimalist":
-        // Default to professional if minimalist not implemented yet
-        return <ProfessionalTemplate />;
+        return <MinimalistTemplate showPlaceholders={showPlaceholders} />;
+      case "creative":
+        return <CreativeTemplate showPlaceholders={showPlaceholders} />;
+      case "executive":
+        return <ExecutiveTemplate showPlaceholders={showPlaceholders} />;
+      case "compact":
+        return <CompactTemplate showPlaceholders={showPlaceholders} />;
+      case "elegant":
+        return <ElegantTemplate showPlaceholders={showPlaceholders} />;
+      case "technical":
+        return <TechnicalTemplate showPlaceholders={showPlaceholders} />;
+      case "academic":
+        return <AcademicTemplate showPlaceholders={showPlaceholders} />;
+      case "chronological":
+        return <ChronologicalTemplate showPlaceholders={showPlaceholders} />;
+      case "functional":
+        return <FunctionalTemplate showPlaceholders={showPlaceholders} />;
+      case "infographic":
+        return <InfographicTemplate showPlaceholders={showPlaceholders} />;
       default:
-        return <ProfessionalTemplate />;
+        return <ProfessionalTemplate showPlaceholders={showPlaceholders} />;
     }
   };
 
@@ -86,6 +130,14 @@ const CVPreview = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Preview</h2>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowPlaceholders(!showPlaceholders)}
+            className="btn btn-outline text-sm flex items-center gap-1"
+            title={showPlaceholders ? "Hide placeholders" : "Show placeholders"}
+          >
+            {showPlaceholders ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showPlaceholders ? "Hide Placeholders" : "Show Placeholders"}
+          </button>
           <button
             onClick={() => setShowFullSizeModal(true)}
             className="btn btn-outline text-sm flex items-center gap-1"
@@ -163,13 +215,25 @@ const CVPreview = () => {
         </div>
       )}
 
-      <div className="border border-secondary-200 rounded-lg overflow-hidden shadow-sm">
+      {/* Updated preview container with proper scaling */}
+      <div className="border border-secondary-200 rounded-lg overflow-hidden shadow-sm bg-white">
         <div
-          className="overflow-auto max-h-[600px] transform scale-75 origin-top"
-          style={{ height: "600px" }}
-          ref={cvRef}
+          className="w-full flex justify-center items-center"
+          style={{ height: "550px" }}
         >
-          {renderTemplate()}
+          <div
+            className="w-[21cm] origin-top"
+            style={{
+              transform: "scale(0.45)",
+              height: "29.7cm", // A4 height
+              transformOrigin: "top center",
+              marginTop: "600px", // Add margin to prevent top from being cut off
+              boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+            }}
+            ref={cvRef}
+          >
+            {renderTemplate()}
+          </div>
         </div>
       </div>
 
