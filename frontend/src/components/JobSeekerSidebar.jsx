@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
   Briefcase,
-  Users,
   User,
   Compass,
   LogOut,
   X,
 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext"; // Import the auth context
 
-const Sidebar = ({ open, setOpen, isJobSeeker, isRecruiter }) => {
+const JobSeekerSidebar = ({ open, setOpen }) => {
   const sidebarRef = useRef(null);
+  const navigate = useNavigate(); // For navigation after logout
+  const { logout } = useAuth(); // Get the logout function from auth context
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -48,21 +50,18 @@ const Sidebar = ({ open, setOpen, isJobSeeker, isRecruiter }) => {
     };
   }, [setOpen]);
 
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate("/login"); // Redirect to login page after logout
+  };
+
   const navItems = [
     { title: "Dashboard", icon: Home, path: "/" },
-    ...(isJobSeeker
-      ? [
-          { title: "CV Builder", icon: FileText, path: "/cv-builder" },
-          { title: "Saved CVs", icon: FileText, path: "/saved-cvs" },
-          { title: "Career Path", icon: Compass, path: "/career-path" },
-        ]
-      : []),
-    ...(isRecruiter
-      ? [
-          { title: "Job Listings", icon: Briefcase, path: "/job-listings" },
-          { title: "Candidates", icon: Users, path: "/candidates" },
-        ]
-      : []),
+    { title: "CV Builder", icon: FileText, path: "/cv-builder" },
+    { title: "Saved CVs", icon: FileText, path: "/saved-cvs" },
+    { title: "Career Path", icon: Compass, path: "/career-path" },
+    { title: "Get Hired", icon: Briefcase, path: "/get-hired" },
     { title: "Profile", icon: User, path: "/profile" },
   ];
 
@@ -123,7 +122,10 @@ const Sidebar = ({ open, setOpen, isJobSeeker, isRecruiter }) => {
 
           {/* Sidebar footer */}
           <div className="p-4 border-t">
-            <button className="flex items-center w-full px-4 py-2.5 text-secondary-700 hover:bg-secondary-100 hover:text-primary-600">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full px-4 py-2.5 text-secondary-700 hover:bg-secondary-100 hover:text-primary-600"
+            >
               <LogOut size={20} className="flex-shrink-0" />
               <span className={`ml-3 ${!open && "md:hidden"}`}>Logout</span>
             </button>
@@ -134,4 +136,4 @@ const Sidebar = ({ open, setOpen, isJobSeeker, isRecruiter }) => {
   );
 };
 
-export default Sidebar;
+export default JobSeekerSidebar;

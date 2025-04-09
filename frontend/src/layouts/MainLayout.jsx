@@ -2,32 +2,34 @@
 
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import Navbar from "../components/shared/Navbar";
-import Sidebar from "../components/shared/Sidebar";
-import Footer from "../components/shared/Footer";
+import JobSeekerSidebar from "../components/JobSeekerSidebar";
+import RecruiterSidebar from "../components/RecruiterSidebar";
 
-const MainLayout = ({ isJobSeeker, isRecruiter }) => {
-  // Update the useState line to have the sidebar collapsed by default
+const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser } = useAuth();
 
-  // Update the main layout structure to ensure proper spacing and prevent overlap
+  // Determine user type - you'll need to adjust this based on how you store user roles
+  const isJobSeeker = currentUser && currentUser.role === "jobSeeker";
+  const isRecruiter = currentUser && currentUser.role === "recruiter";
+
   return (
     <div className="flex h-screen bg-secondary-50">
-      <Sidebar
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
-        isJobSeeker={isJobSeeker}
-        isRecruiter={isRecruiter}
-      />
+      {/* Render the appropriate sidebar based on user role */}
+      {isJobSeeker && (
+        <JobSeekerSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      )}
+      {isRecruiter && (
+        <RecruiterSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar onMenuButtonClick={() => setSidebarOpen(true)} />
-
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Navbar onMenuButtonClick={() => setSidebarOpen(!sidebarOpen)} />
+        <main className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
-
-        <Footer />
       </div>
     </div>
   );
