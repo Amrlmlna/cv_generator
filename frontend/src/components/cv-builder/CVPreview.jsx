@@ -217,17 +217,12 @@ const CVPreview = () => {
 
       {/* Updated preview container with proper scaling */}
       <div className="border border-secondary-200 rounded-lg overflow-hidden shadow-sm bg-white">
-        <div
-          className="w-full flex justify-center items-center"
-          style={{ height: "550px" }}
-        >
+        <div className="w-full flex justify-center items-center py-8 overflow-auto">
           <div
-            className="w-[21cm] origin-top"
+            className="bg-white shadow-md"
             style={{
-              transform: "scale(0.30)",
-              height: "29.7cm", // A4 height
-              transformOrigin: "top center",
-              marginTop: "600px", // Add margin to prevent top from being cut off
+              width: "21cm",
+              height: "29.7cm",
               boxShadow: "0 0 10px rgba(0,0,0,0.1)",
             }}
             ref={cvRef}

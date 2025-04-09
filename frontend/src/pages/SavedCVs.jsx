@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import "../index.css";
+
 import {
   getUserCVs,
   deleteCV,
@@ -321,11 +323,7 @@ const SavedCVs = () => {
 
       {/* Print content - only visible when printing */}
       {selectedCV && (
-        <div
-          ref={printFrameRef}
-          className="hidden print:block p-0 m-0"
-          style={{ width: "100%", height: "100%" }}
-        >
+        <div ref={printFrameRef} className="print-area">
           {renderCVTemplate()}
         </div>
       )}
@@ -333,19 +331,34 @@ const SavedCVs = () => {
       {/* Add print styles */}
       <style jsx global>{`
         @media print {
+          /* Sembunyikan elemen yang tidak perlu saat print */
+          body * {
+            visibility: hidden;
+          }
+
+          .print-area,
+          .print-area * {
+            visibility: visible;
+          }
+
+          .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: auto;
+            overflow: visible;
+          }
+
+          /* Hindari pemotongan halaman */
+          .print-area {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          /* Hilangkan margin default */
           @page {
-            size: A4;
             margin: 0;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:block {
-            display: block !important;
           }
         }
       `}</style>
