@@ -1,27 +1,36 @@
-const express = require("express")
-const { upload } = require("../config/multer")
-const { protect } = require("../middlewares/auth")
-const { uploadCV, getUserCVs, getCV, downloadCV, deleteCV } = require("../controllers/cvController")
+const express = require("express");
+const { upload } = require("../config/multer");
+const { protect } = require("../middlewares/auth");
+const {
+  uploadCV,
+  getUserCVs,
+  getCV,
+  downloadCV,
+  deleteCV,
+  updateCVVisibility,
+} = require("../controllers/cvController");
 
-const router = express.Router()
+const router = express.Router();
 
 // Protect all routes
-router.use(protect)
+router.use(protect);
 
-// Upload CV route
-router.post("/upload", upload.single("image"), uploadCV)
+// Upload CV route - make file upload optional
+router.post("/upload", upload.single("file"), uploadCV);
 
 // Get all user CVs
-router.get("/", getUserCVs)
+router.get("/", getUserCVs);
 
 // Get single CV
-router.get("/:id", getCV)
+router.get("/:id", getCV);
 
 // Download CV
-router.get("/download/:id", downloadCV)
+router.get("/download/:id", downloadCV);
 
 // Delete CV
-router.delete("/:id", deleteCV)
+router.delete("/:id", deleteCV);
 
-module.exports = router
+// Update CV visibility
+router.patch("/:id/visibility", updateCVVisibility);
 
+module.exports = router;
