@@ -9,6 +9,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import jobService from "../services/jobService";
 
 const GetHired = () => {
   const [jobs, setJobs] = useState([]);
@@ -18,87 +19,14 @@ const GetHired = () => {
   const [filterType, setFilterType] = useState("");
 
   useEffect(() => {
-    // In a real implementation, this would fetch from your API
-    // For now, we'll use mock data
     fetchJobs();
   }, []);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock data
-      const mockJobs = [
-        {
-          id: 1,
-          title: "Senior Frontend Developer",
-          company: "TechCorp Inc.",
-          location: "New York, NY",
-          type: "Full-time",
-          salary: "$100,000 - $130,000",
-          description:
-            "We are looking for an experienced Frontend Developer proficient in React, TypeScript, and modern CSS frameworks.",
-          requirements:
-            "5+ years of experience with modern JavaScript frameworks, strong TypeScript skills, and experience with responsive design.",
-          postedDate: "2023-04-15",
-        },
-        {
-          id: 2,
-          title: "Backend Engineer",
-          company: "DataSystems LLC",
-          location: "Remote",
-          type: "Full-time",
-          salary: "$90,000 - $120,000",
-          description:
-            "Join our team to build scalable backend services using Node.js, Express, and MongoDB.",
-          requirements:
-            "3+ years of experience with Node.js, knowledge of database design, and RESTful API development.",
-          postedDate: "2023-04-20",
-        },
-        {
-          id: 3,
-          title: "UX/UI Designer",
-          company: "Creative Solutions",
-          location: "San Francisco, CA",
-          type: "Full-time",
-          salary: "$85,000 - $110,000",
-          description:
-            "Design intuitive and engaging user experiences for web and mobile applications.",
-          requirements:
-            "Portfolio demonstrating UX/UI design skills, proficiency in Figma or Adobe XD, and understanding of user-centered design principles.",
-          postedDate: "2023-03-10",
-        },
-        {
-          id: 4,
-          title: "DevOps Engineer",
-          company: "CloudTech Services",
-          location: "Remote",
-          type: "Contract",
-          salary: "$95,000 - $115,000",
-          description:
-            "Implement and maintain CI/CD pipelines, manage cloud infrastructure, and optimize deployment processes.",
-          requirements:
-            "Experience with AWS/Azure, Docker, Kubernetes, and CI/CD tools like Jenkins or GitHub Actions.",
-          postedDate: "2023-04-25",
-        },
-        {
-          id: 5,
-          title: "Product Manager",
-          company: "InnovateTech",
-          location: "Boston, MA",
-          type: "Full-time",
-          salary: "$110,000 - $140,000",
-          description:
-            "Lead product development from conception to launch, working closely with design, engineering, and marketing teams.",
-          requirements:
-            "3+ years of product management experience, strong analytical skills, and excellent communication abilities.",
-          postedDate: "2023-04-18",
-        },
-      ];
-
-      setJobs(mockJobs);
+      const data = await jobService.getJobs();
+      setJobs(data);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       toast.error("Failed to load job listings");
