@@ -39,6 +39,7 @@ testConnection();
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/cv", require("./routes/cvRoutes"));
 app.use("/api/jobs", require("./routes/jobRoutes"));
+app.use("/api/applications", require("./routes/applicationRoutes"));
 
 // Health check route
 app.get("/api/health", (req, res) => {

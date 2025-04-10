@@ -8,61 +8,73 @@ const CVStyle = () => {
     {
       id: "professional",
       name: "Professional",
+      image: "professional.png",
       description: "Clean and traditional layout for a professional look",
     },
     {
       id: "modern",
       name: "Modern",
+      image: "modern.png",
       description: "Contemporary design with a creative touch",
     },
     {
       id: "minimalist",
       name: "Minimalist",
+      image: "minimalist.png",
       description: "Simple and elegant design with minimal elements",
     },
     {
       id: "creative",
       name: "Creative",
+      image: "creative.png",
       description: "Artistic design for creative professionals",
     },
     {
       id: "executive",
       name: "Executive",
+      image: "executive.png",
       description: "Formal design for executives and senior professionals",
     },
     {
       id: "compact",
       name: "Compact",
+      image: "compact.png",
       description: "Fits more information in less space",
     },
     {
       id: "elegant",
       name: "Elegant",
+      image: "elegant.png",
       description: "Sophisticated design with elegant typography",
     },
     {
       id: "technical",
       name: "Technical",
+      image: "technical.png",
       description: "Design focused on technical skills and coding",
     },
     {
       id: "academic",
       name: "Academic",
+      image: "academic.png",
       description: "Design for academic and research CVs",
     },
     {
       id: "chronological",
       name: "Chronological",
+      image: "chronological.png",
       description: "Timeline-based design emphasizing career progression",
     },
     {
       id: "functional",
       name: "Functional",
+      image: "functional.png",
       description: "Skills-focused design for highlighting competencies",
     },
     {
       id: "infographic",
       name: "Infographic",
+      image: "infographic.png",
       description: "Visual design with graphic elements and data visualization",
     },
   ];
@@ -90,12 +102,10 @@ const CVStyle = () => {
     },
   ];
 
-  // Update template immediately when selected
   const handleTemplateChange = (templateId) => {
     setTemplate(templateId);
   };
 
-  // Update color scheme immediately when selected
   const handleColorChange = (colorId) => {
     setColorScheme(colorId);
   };
@@ -116,11 +126,19 @@ const CVStyle = () => {
               }`}
               onClick={() => handleTemplateChange(template.id)}
             >
-              <div className="h-36 bg-secondary-100 border-b border-secondary-200 flex items-center justify-center">
-                <span className="text-secondary-400 font-medium">
-                  {template.name} Preview
-                </span>
+              <div className="relative h-36 overflow-hidden">
+                <img
+                  src={`/images/${template.image}`}
+                  alt={`${template.name} Preview`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-opacity-30 flex items-center justify-center">
+                  <span className="text-white font-medium text-center text-sm drop-shadow">
+                    {template.name} Preview
+                  </span>
+                </div>
               </div>
+
               <div className="p-4">
                 <h3 className="font-medium text-secondary-900">
                   {template.name}

@@ -1,74 +1,55 @@
-const db = require("../config/db");
+const JobModel = require("../models/jobModel");
 
-exports.getAllJobs = async () => {
-  const rows = await db.query(
-    "SELECT * FROM job_listings ORDER BY created_at DESC"
-  );
-  return rows;
-};
+class JobService {
+  static async getAllJobs() {
+    return await JobModel.getAll();
+  }
 
-exports.createJob = async (data) => {
-  const {
-    recruiter_id,
-    title,
-    company,
-    location,
-    description,
-    requirements,
-    type,
-    salary_range,
-    status,
-  } = data;
+  static async getJobById(id) {
+    return await JobModel.getById(id);
+  }
 
-  const result = await db.query(
-    `INSERT INTO job_listings (recruiter_id, title, company, location, description, requirements, type, salary_range, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-    [
-      recruiter_id,
-      title,
-      company,
-      location,
-      description,
-      requirements,
-      type,
-      salary_range,
-      status,
-    ]
-  );
+  static async getJobsByRecruiterId(recruiterId) {
+    return await JobModel.getByRecruiterId(recruiterId);
+  }
 
-  return { id: result.insertId, ...data };
-};
+  static async createJob(data) {
+    // Validate required fields
+    const requiredFields = [
+      "title",
+      "company",
+      "location",
+      "description",
+      "requirements",
+      "type",
+    ];
 
-exports.updateJob = async (id, data) => {
-  const {
-    title,
-    company,
-    location,
-    description,
-    requirements,
-    type,
-    salary_range,
-    status,
-  } = data;
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        throw new Error(`${field} is required`);
+      }
+    }
 
-  await db.query(
-    `UPDATE job_listings SET title=?, company=?, location=?, description=?, requirements=?, type=?, salary_range=?, status=?, updated_at=NOW() WHERE id=?`,
-    [
-      title,
-      company,
-      location,
-      description,
-      requirements,
-      type,
-      salary_range,
-      status,
-      id,
-    ]
-  );
+    return await JobModel.create(data);
+  }
 
-  return { id, ...data };
-};
+  static async updateJob(id, data) {
+    // Get the existing job to merge with updates
+    const existingJob = await JobModel.getById(id);
 
-exports.deleteJob = async (id) => {
-  await db.query("DELETE FROM job_listings WHERE id = ?", [id]);
-};
+    if (!existingJob) {
+      throw new Error("Job not found");
+    }
+
+    // Merge existing data with updates
+    const updatedData = { ...existingJob, ...data };
+
+    return await JobModel.update(id, updatedData);
+  }
+
+  static async deleteJob(id) {
+    return await JobModel.delete(id);
+  }
+}
+
+module.exports = JobService;
